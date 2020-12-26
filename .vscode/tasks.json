@@ -1,0 +1,28 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build OCaml Matching Docker Container",
+        "type": "shell",
+        "command" : "cd opentransplant && sh build.sh",
+        "windows": { "command" : "cd .\\opentransplant && sh build.sh" },
+        "group": "build"
+      },
+      {
+        "label": "Push Matching Container to Docker Hub",
+        "type":"shell",
+        "command": "cd /opentransplant && docker login && docker push wiredsis/opentransplant",
+        "windows": {"command": "cd .\\opentransplant && docker login && docker push wiredsis/opentransplant"},
+        "group": "none"
+      },
+      {
+        "label": "Build Elixir API Layer Docker Container",
+        "type": "shell",
+        "command" : "cd otapi && sh build.sh",
+        "windows": { "command" : "cd .\\otapi && sh build.sh" },
+        "group": "build"
+      }
+    ]
+  }
