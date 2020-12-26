@@ -1,0 +1,13 @@
+services:
+  opentransplant:
+    image: opentransplant
+    build: ./openTransplant
+    volumes:
+      - ./openTransplant/OpenTransplant:/OpenTransplant
+  otapi:
+    image: opentransplant_api
+    build: ./otapi
+    volumes: 
+      - ./otapi:/srv
+  redis:
+    image: redis:6

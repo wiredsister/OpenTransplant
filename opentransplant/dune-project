@@ -1,0 +1,20 @@
+(lang dune 2.7)
+(license "Apache-2.0")
+(authors "https://github.com/wiredsister")
+(maintainers "https://github.com/wiredsister")
+(version Alpha.0.0.1)
+(generate_opam_files true)
+(name opentransplant)
+
+; DEPLOYMENT TO AWS CLOUD:
+; (package 
+;    (name OpenTransplantDeployAWS)
+;    (synopsis "OpenSource Organ Transplant system targeting AWS Cloud for runtime")
+;    (description "Organ Procurement Transplant System for  "We, The People" developed using publicly available information about Organ Transplant & cutting edge medical research."))
+
+    
+; DEPLOYMENT TO AZURE CLOUD:
+; (package 
+;    (name OpenTransplantDeployAzure)
+;    (synopsis "OpenSource Organ Transplant system targeting AWS Cloud for runtime")
+;    (description "Organ Procurement Transplant System for  "We, The People" developed using publicly available information about Organ Transplant & cutting edge medical research."))
