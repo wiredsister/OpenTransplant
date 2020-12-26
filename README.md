@@ -54,6 +54,7 @@ Packages Used:
 Go to root directory where `dune-project` is and run:
 
 ```
-dune build
+sh build.sh
+sh start.sh
 ```
 
