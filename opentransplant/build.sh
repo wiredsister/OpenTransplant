@@ -1,1 +1,1 @@
-docker build -t opentransplant .
+docker build -t wiredsis/opentransplant .

@@ -48,6 +48,7 @@ Packages Used:
 - OCaml and Reason IDE (@ext:freebroccolo.reasonml)
 - Remote - WSL  (@ext:ms-vscode-remote.remote-wsl)
 - FiraCode (install _is not_ through VSCode store, but rather follow instructions here: https://github.com/tonsky/FiraCode >> and change font-family setting in **VSCode > Editor** to `"Fira-Code"`)
+- Docker - (https://docs.docker.com/docker-for-windows/wsl/) to install 
 
 ### Build
 
