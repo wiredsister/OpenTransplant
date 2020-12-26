@@ -1,1 +1,1 @@
-docker build -t wiredsis/opentransplant .
+docker build -t wiredsis/opentransplant:$(git rev-parse HEAD) --build-arg git_hash=$(git rev-parse HEAD) .

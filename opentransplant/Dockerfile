@@ -19,6 +19,9 @@ RUN opam switch create ocaml-system.4.05.0
 RUN opam update -uy
 RUN opam install -y js_of_ocaml js_of_ocaml-ppx merlin utop ocp-indent dune
 RUN opam install -y calendar cohttp-lwt-unix fmt logs qcheck uuidm
-RUN eval $(opam config env)
+RUN echo eval $(opam config env) > ~/.bashrc
+
+ARG GIT_HASH=git_hash
+COPY . /OpenTransplant
 
 CMD [ "/bin/bash" ]
