@@ -14,4 +14,7 @@ RUN curl -sL https://deb.nodesource.com/setup_lts.x | bash - \
 
 RUN mix local.rebar --force
 
+ARG GIT_HASH=git_hash
+COPY . /srv
+
 CMD ["mix", "phx.server"]
