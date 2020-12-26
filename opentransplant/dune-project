@@ -5,7 +5,6 @@
 (version Alpha.0.0.1)
 (generate_opam_files true)
 (name opentransplant)
-(description "Organ Procurement Transplant System for  "We, The People" developed using publicly available information about Organ Transplant & cutting edge medical research.")
 
 ; DEPLOYMENT TO AWS CLOUD:
 ; (package 
