@@ -1,0 +1,1 @@
+docker run -it --rm -v "$(pwd):/srv" -p 80:4000 opentransplant_api /bin/bash

@@ -1,3 +1,0 @@
-(library
- (name OpenTransplant)
- (libraries cohttp-lwt-unix logs fmt cmdliner lwt yojson calendar qcheck uuidm))
