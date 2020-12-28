@@ -11,6 +11,10 @@ provider "aws" {
   region = "us-east-1"
 }
 
+data "external" "provisioner_cidr" {
+  program = ["sh", "get_provisioner_cidr.sh"]
+}
+
 variable "environment" {
   type = string
   default = "dev"
@@ -85,8 +89,7 @@ resource "aws_security_group" "main" {
     from_port       = 0
     to_port         = 0
     protocol        = "-1"
-    cidr_blocks     = ["0.0.0.0/0"]
-    // cidr_blocks     = [aws_vpc.main.cidr_block, <admin_ip>] // for production
+    cidr_blocks     = [aws_vpc.main.cidr_block, data.external.provisioner_cidr.result.provisioner_cidr]
   }
 
   egress {
