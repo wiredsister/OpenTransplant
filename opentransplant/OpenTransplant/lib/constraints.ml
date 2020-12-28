@@ -1,5 +1,5 @@
 open CalendarLib
-open Uuidm
+(* open Uuidm *)
 
 module Algorithm = struct 
 
@@ -258,15 +258,17 @@ end
 
 module Human = struct
 
+    type version = float
+
     type t =
     {
-        details: details;
+        details: details option;
         blood_type: blood_type;
         body_size: body_size;
         hla_class_I: hla_class_I;
         hla_class_II: hla_class_II;
         (* Dictionary: Key:ICD10_CODE, Value:TEST_RESULT *)
-        prognosis_tags: (disease, bool option) Hashtbl.t
+        icd_10_codes: (disease, bool option) Hashtbl.t
     }
 
     and details = 
@@ -331,12 +333,8 @@ module Human = struct
         | Stable
         | Nominal
 
-    (* let is_child (patient:t) : bool =
-        match patient.details.birthdate with *)
-
-
     let has_disease (patient:t) (disease:disease) : bool = begin
-        let { prognosis_tags = tags; _ } = patient in
+        let { icd_10_codes = tags; _ } = patient in
         if Hashtbl.mem tags disease
         then
             let test_results = Hashtbl.find tags disease in
@@ -354,6 +352,11 @@ module Human = struct
         else false
     end
 
+    (* 
+        TODO: create ICD 10 service as there are over 70k of them and since it is an 
+        externally versioned product, we should consider if there are something like F#
+        type providers or the like wrapping that standard and providing an existing API. 
+     *)
     let is_CMV_negative (p:t) = not (has_disease p "P35.1")
     let is_EBV_negative (p:t) = not (has_disease p "B27.9")
     let is_COVID_19_negative (p:t) = not (has_disease p "U07.1")
@@ -362,6 +365,8 @@ module Human = struct
 end
 
 module Organ = struct
+    
+    type version = float
 
     type t = 
         | Heart 
@@ -372,92 +377,50 @@ module Organ = struct
         | Intestines
 
     and sidededness = Right | Left
-
-end
-
-module type PatientOrganToBeReplaced = sig val organ_to_replace : Organ.t end
-
-module Patient(O: PatientOrganToBeReplaced) = struct 
-
-    type t = Human.t * info
-    and vitals = {
-        (** 
-        Mg/dL, or milligrams per deciliter, is a measurement that indicates 
-        the amount of a particular substance (such as glucose) in a specific 
-        amount of blood.
-
-        Source: https://www.webmd.com/diabetes/qa/what-does-mgdl-mean *)
-        bilirubin: mg * dL;
-
-        (** 
-        An equivalent is the amount of a substance that will react with a certain number 
-        of hydrogen ions. A milliequivalent is one-thousandth of an equivalent.
-
-        Source: https://hartfordhospital.org/health-wellness/health-resources/health-library/detail?id=stm159429&lang=en-us *)
-        serum_sodium: mEq * l;
-
-
-    }
-
-    (** Milligrams fluid volume *)
-    and mg = float
-
-    (** Decilitre *)
-    and dL = float
-
-    (** A milliequivalent is one-thousandth of an equivalent *)
-    and mEq = float
-
-    (** Liter fluid volume *)
-    and l = float
-
-    (** 
-        CCVHD = Continuous Veno-Venous Hemodialysis
-        SCT = Serum Creatine Test *)
-    and 
-    has_had_CVVHD_for_24H_a_week_prior_to_SCT = bool
-
-    (** 
-        CCVHD = Continuous Veno-Venous Hemodialysis
-        SCT = Serum Creatine Test *)
-    and has_had_dialysis_twice_a_week_prior_to_SCT = bool
-
-    (** 
-        The International Normalized Ratio of Prothrombin Time *)
-    and inr = float
-    and info = { 
-        
-        zipcode: Human.zipcode;
-        body_size: Human.body_size;
-        vitals: vitals;
-        identification: Uuidm.t;
-    }
-
-    (** https://optn.transplant.hrsa.gov/resources/allocation-calculators/meld-calculator/ *)
     
-    (* let is_healthy =
-        match O.organ_to_replace with
-        | Heart _ -> ()
-        | Lung _ -> ()
-        | Pancreas _ -> ()
-        | _ -> () *)
+    let to_string : (t -> string) =
+        function
+        | Heart -> "Heart"
+        | Lung (Right) -> "Right Lung"
+        | Lung (Left) -> "Left Lung"
+        | Liver -> "Liver"
+        | Kidney (Left) -> "Left Kidney"
+        | Kidney (Right) -> "Right Kidney"
+        | Pancreas -> "Pancreas"
+        | Intestines -> "Intestines"
+    
+    let of_string : (string -> t) =
+        function
+        | "Heart" -> Heart
+        | "Right Lung" -> Lung (Right)
+        | "Left Lung" -> Lung (Left)
+        | "Liver" -> Liver
+        | "Right Kidney" -> Kidney (Right)
+        | "Left Kidney" -> Kidney (Left)
+        | "Pancreas" -> Pancreas
+        | "Intestines" -> Intestines 
+        | _ -> failwith "Not a valid string representation of organ"
 
 end
 
 type donortype = LivingDonor of Human.t * Organ.t | RegularDonor of Organ.t
 
-module type DonorType = sig val donortype : donortype end
-
-module Donor (DT: DonorType) = struct 
-
-end 
-
 module type OrganTransplantType = sig val body_part : Organ.t end
 
-module Scores(O: OrganTransplantType) = struct 
+module type DonorType = sig val donortype : donortype end
 
+module Donor (DT: DonorType) = struct  
 
-end
+    type version = float
+
+    type t = Human.t * Organ.t 
+
+    let get_organ =
+        match DT.donortype with
+        | LivingDonor (_, o) -> o
+        | RegularDonor (o) -> o
+
+end 
 
 module OrganTransplant (O: OrganTransplantType) = struct
 
@@ -484,20 +447,42 @@ module OrganTransplant (O: OrganTransplantType) = struct
         | Untested
         | AwaitingTest
 
-    let is_available (h:Human.t) : bool =
-        begin match h.details.availability with
-        | Can_Be_Contacted_and_Transplant_Ready -> true
-        | Can_Be_Contacted_and_NOT_Transplant_Ready -> true
-        | Can_NOT_Be_Contacted_and_Transplant_Ready -> false
-        | Can_NOT_Be_Contacted_and_NOT_Transplant_Ready -> false end
+    let is_available : Human.t -> bool =
+        function
+        | { details = Some details; _} -> 
+            begin match details with
+            | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
+            | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
+            | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> false
+            | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false end
+        | _ -> false
 
-    let is_transplant_ready (h:Human.t) : bool = 
-        begin match h.details.availability with
-        | Can_Be_Contacted_and_Transplant_Ready -> true
-        | Can_Be_Contacted_and_NOT_Transplant_Ready -> false
-        | Can_NOT_Be_Contacted_and_Transplant_Ready -> true
-        | Can_NOT_Be_Contacted_and_NOT_Transplant_Ready -> false end
+    let is_available_by_phone : Human.t -> bool =
+        function
+        | { details = Some details; _} -> 
+            begin match details with
+            | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
+            | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> true
+            | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> false
+            | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false end
+        | _ -> false
 
+    let is_transplant_ready : Human.t -> bool = 
+         function
+        | { details = Some details; _} -> 
+            begin match details with
+            | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
+            | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
+            | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> true
+            | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false end
+        | _ -> false
+    (**
+        UX Research Required: How do Surgeons and OPOs in the field
+        need to categorize organ size in such a way that the volumetric
+        proportions are known sufficiently for the algorithm's suggestions, 
+        but loose enough to not exclude important "less than ideal" matches
+        that could also surface and be useful?
+     *)
     let is_comparable_body_type ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
         begin match d.body_size, p.body_size with
         (* Perfect Matches *)
@@ -662,35 +647,68 @@ module OrganTransplant (O: OrganTransplantType) = struct
                 | Minor_Mismatch _ -> false
                 | Major_Mismatch _ -> false end
 
+    (* let makeMatch ~patient(p:Patient.t) ~donor(d:Donor.t) ~tracking:(uuid:Uuidm.t) = *)
+        (* match O.body_part with *)
+        (*
+            Hemodynamic assessment results:
+                 Functional status or exercise testing results
+                 Heart failure severity or end organ function indicators
+                 Heart failure therapies
+                 Mechanical support
+                 Sensitization risk, including CPRA, peak PRA, and number of prior sternotomies
+                 Current diagnosis
+         *)
+
+        (* | Heart -> () *)
+            (* match (d:Donor.t), (p:Patient.t) with
+            | (LivingDonor ((human:Human.t), (request:OrganTransplantType))) , p ->
+                let _match = ({}:OrganTransplant.match) in
+                { 
+                    version = Algorithm.version;
+                    match = _match; }
+            | (RegularDonor dt), p ->  *)
+        (* | Liver -> ()
+        | Pancreas -> ()
+        | 
+              *)
 end
 
+
+module Match = struct 
+
+    type t = {
+        version : float;
+        abo_compatibility : float;
+        crossmatch_hla : bool;
+        will_survive_travel : bool;
+        correct_size : bool;
+        tags: (string * string) Hashtbl.t;
+    }
+
+    and match_result = {
+        organ : Organ.t;
+        tracking : Uuidm.t;
+        donor: Donor.t;
+        patient: Patient.t;
+        result: t;
+    }
+
+    let makeRegularMatch ~patient:(p:Patient.t) ~donor(d:Donor.t) ~organ(o:Organ.t) =
+        match d.get_organ with 
+        | o -> 
+
+end
+
+(*
 module Transplants = struct 
+*)
+(*     
+    module Heart : OrganTransplantType = struct
+        include OrganTransplant;
 
-    let heart = `v5(Organ.Heart, Printf.sprintf "Heart Transplant %s" Algorithm.version)
-
-    (** 
-        Lung Transplant Workflows
-        Source: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4247525/ *)
-    let right_lung () = `v5(Organ.Lung (Right), Printf.sprintf "Right Lung Transplant %s" Algorithm.version)
-    let left_lung () = `v5(Organ.Lung (Left), Printf.sprintf "Left Lung Transplant %s" Algorithm.version)
-    
-    let bilateral_lung = 
-        let left = left_lung() in
-        let right = right_lung() in
-        left,right
-
-    let right_kidney = 
-        `v5(Organ.Kidney (Right), Printf.sprintf "Right Kidney Transplant %s" Algorithm.version)
-    let left_kidney = 
-        `v5(Organ.Kidney (Left), Printf.sprintf "Left Kidney Transplant %s" Algorithm.version)
-
-(* 
-    module Heart = struct
-        
         let body_part = 
-            let uuid = v5 Heart  (Printf.sprintf "Heart Transplant: Algo V %s" Algorithm.version) 
-       
+            let uuid = v5 Heart (Printf.sprintf "Heart Transplant: Algo V %s" Algorithm.version)
+            Organ.create
 
     end *)
-
-end
+(* end *)

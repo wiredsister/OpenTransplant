@@ -1,3 +1,4 @@
 (library
  (name OpenTransplant)
- (libraries cohttp-lwt-unix logs fmt cmdliner lwt yojson calendar qcheck uuidm))
+(preprocess (pps ppx_deriving_yojson))
+(libraries cohttp-lwt-unix logs fmt cmdliner lwt yojson calendar qcheck uuidm ppx_deriving_yojson))
