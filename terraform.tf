@@ -133,3 +133,7 @@ resource "aws_instance" "ec2_instances" {
     Env   = var.environment
   }
 }
+
+output "ec2_instance_public_ip" {
+  value = aws_instance.ec2_instances[0].public_ip
+}
