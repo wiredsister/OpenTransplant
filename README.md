@@ -17,7 +17,7 @@ https://github.com/yanlow, https://github.com/wiredsister
 
 We believe every country and community, regardless of wealth or ability, should be able to operate an organ transplant network for its citizens. We believe this organ transplant network should be safe, auditable, free of fraud, waste, and abuse; we believe this system should benefit life and reduce death. 
 
-#### Key Features & Road Map:
+### Key Features & Road Map:
 - organ decay is reduced
 - patient outcomes are optimized for
 - endangered populations are protected
@@ -30,14 +30,22 @@ We believe every country and community, regardless of wealth or ability, should 
 
 This entire application was designed and built using publically available information from OPTN, UNOs, and HRSA found via Google as well as numerous medical papers from scholarly journals. See PAPERS.md (TODO: must add citations & PAPER.md file for medical lit.) for details.
 
-#### Short Term Tech Road Map
+### Architecture Diagram
+
+![Image of Tentative Organ Transplant Architecture](https://user-images.githubusercontent.com/3818802/103159093-38953800-4793-11eb-87c7-090c816c9cc9.jpg)
+
+- Web API Layer: Elixir Phoenix Web API Stack
+- FrontEnd: Node.js, SCSS styling
+- Backend Matching & Scheduling: OCaml services
+
+### Short Term Tech Road Map
 
 1. Webapp for OPOs
 2. Webapp for Patient
 3. EHR FHIR API integration for EPIC & Cerner
 4. Gherkin & Cucumber Scenario tests for each organ & user health
 
-### Build & Run
+## Build & Run
 
 ### OCaml Environment
 
