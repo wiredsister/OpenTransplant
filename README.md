@@ -3,6 +3,9 @@
 
 ## Democratized Organ Procurement Transplant Network For The People
 
+
+![Image of Tentative Organ Transplant Architecture](./assets/OpenTransplant_HeaderLogo.jpg)
+
 ### Project Status: 
 
 In Development! Not ready to be used in any pilot or production scenario.
@@ -83,6 +86,7 @@ Go to root directory where `dune-project` is and run:
 sh build.sh
 sh start.sh
 ```
+
 ### Clone Image
 
 ```
