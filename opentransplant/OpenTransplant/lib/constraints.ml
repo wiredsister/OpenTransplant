@@ -1,13 +1,18 @@
 open CalendarLib
-(* open Uuidm *)
+open Uuidm
 
 module Algorithm = struct 
 
+    (**
+        A whole module for tracking and versioning for specific
+     *)
     let version = "Alpha.0.0.1"
 
 end
 
 module OPO = struct 
+
+    let version = Algorithm.version
 
     type t =
     | ALCH_TX1
@@ -258,8 +263,23 @@ end
 
 module Human = struct
 
-    type version = float
+    let version = Algorithm.version
 
+    (** TODO: This should probably be its own service as there are thousands of ICD10 codes 
+        and we don't own the specification for them. Also, we are not showing partial states
+        and do not delineate between "took the test and failed" and "have not yet taken the test";
+        "test missing and required", etc. *)
+        module ICD10Codes = Set.Make(String)
+
+    (**
+        Human.t formats can are versioned independentally of the rest of the file and 
+        have some qualities that make them worth first understanding: `details` are optional
+        because most donors are dead, but some donors are living donors who may donate a kidney
+        to a sibling, for example. Currently, volumetric proportions of organs are represented
+        as a person's general body size. All diseases are carried around a set of ICD10 codes; e.g. 
+        "U07.1" as Covid-19. Bloodtype, organ sizing, and HLA typing information is domain modeled 
+        as source and thus versioned inside this module as well.
+     *)
     type t =
     {
         details: details option;
@@ -267,10 +287,16 @@ module Human = struct
         body_size: body_size;
         hla_class_I: hla_class_I;
         hla_class_II: hla_class_II;
-        (* Dictionary: Key:ICD10_CODE, Value:TEST_RESULT *)
-        icd_10_codes: (disease, bool option) Hashtbl.t
+        icd_10_codes:  ICD10Codes.t;
     }
 
+    (**
+        Not really sure how much data we want to collect about donors...
+        we could store name, email, primary_phone, etc as Strings for a
+        SetOrdType and call it a day. Although, these properties are, to
+        my understanding, absolutely required to all matching workflows
+        and medical analysis.
+     *)
     and details = 
     {
 
@@ -280,7 +306,6 @@ module Human = struct
         birthdate: Date.t;
         waitlist_start: Date.t;
         availability: availability;
-
     }
     
     and blood_type = 
@@ -293,8 +318,8 @@ module Human = struct
         | O_Pos
         | O_Neg
 
-    (**  This is a hypothetical, might be 
-        best suited to be bands of kg *)
+    (**  This is a hypothetical, might be best suited to be bands of kg 
+    or actually *)
     and body_size =
         | Infant
         | Toddler
@@ -308,12 +333,8 @@ module Human = struct
 
     and zipcode = string
 
-    (* TODO: ICD_10_CODE MAPPING *)
+    (** ICD_10_CODE KEYS *)
     and disease = string
-
-    and meldscore = int 
-
-    and peldscore = string
 
     and availability = 
         | Can_Be_Contacted_and_Transplant_Ready
@@ -332,25 +353,17 @@ module Human = struct
         | Critical
         | Stable
         | Nominal
+        | Status of string
 
-    let has_disease (patient:t) (disease:disease) : bool = begin
-        let { icd_10_codes = tags; _ } = patient in
-        if Hashtbl.mem tags disease
-        then
-            let test_results = Hashtbl.find tags disease in
-            match test_results with
-            | Some results -> results
-            (* 
-                Is there a reason to distinguish "inconclusive" vs tested and negative? 
-                If so, that can be represented here...
-            *)
-            | None -> false
-        (* 
-            Is there a reason to distinguish "untested" vs tested and negative? 
-            If so, that can be represented here...
-        *)
-        else false
-    end
+    (* 
+        TODO: create ICD 10 service as there are over 70k of them and since it is an 
+        externally versioned product, we should consider if there are something like F#
+        type providers or the like wrapping that standard and providing an existing API. 
+     *)
+    let has_disease (human:t) (illness:string) =
+        match human, illness with
+        { icd_10_codes = (tags:ICD10Codes.t); _ }, d -> 
+            ICD10Codes.mem d tags
 
     (* 
         TODO: create ICD 10 service as there are over 70k of them and since it is an 
@@ -361,14 +374,13 @@ module Human = struct
     let is_EBV_negative (p:t) = not (has_disease p "B27.9")
     let is_COVID_19_negative (p:t) = not (has_disease p "U07.1")
 
-
 end
 
 module Organ = struct
     
-    type version = float
+    let version = Algorithm.version
 
-    type t = 
+    type t =
         | Heart 
         | Lung of sidededness
         | Liver 
@@ -400,6 +412,164 @@ module Organ = struct
         | "Pancreas" -> Pancreas
         | "Intestines" -> Intestines 
         | _ -> failwith "Not a valid string representation of organ"
+    
+    module IntakeTags = Set.Make(String)
+
+    type intake_information = {                
+        extraction_time: Date.t;
+        intake_location: string;
+        intake_facility: string;
+        details: Human.t;
+        tags: IntakeTags.t;
+    }
+
+    type _ extracted =
+        | HeartTransplant: intake_information * t -> t extracted
+        | HeartAndLungsTransplant: intake_information * t * t * t -> t extracted
+        | BilateralLungsTransplant: intake_information * t * t -> t extracted
+        | LeftLungTransplant: intake_information * t-> t extracted
+        | RightLungTransplant: intake_information * t -> t extracted
+        | DualKidneyTransplant: intake_information * t * t -> t extracted
+        | RightKidneyTransplant: intake_information * t -> t extracted
+        | LeftKidneyTransplant: intake_information * t -> t extracted
+        | PancreasTransplant: intake_information * t -> t extracted
+        | IntestinesTransplant: intake_information * t -> t extracted
+        | LiverTransplant: intake_information * t -> t extracted
+
+    type organ_intake_form = {
+        organs: t list;
+        tracking: Uuidm.t;
+        organ_transplant_type: string;
+        waitlist_start: Date.t;
+        (* Eventual North American implementation (currently illegal) 
+        could use Opo.t and hard code regulation that way. *)
+        organ_intake_version: string;
+        intake_information: intake_information;
+    }
+
+    (*
+        EXAMPLE CLIENT CODE:
+
+        /* HTTP POST CALLBACK CODE */
+        ...route.callback(fun postrequest,context -> 
+            match postrequest.organ_transplant_type with
+            | s when Str.string_match "HEART" s 0 -> 
+                let info = jsonparse postrequest.info in
+                let intake_receipt = HeartTransplant(info, Organ.Heart) in
+                ...write to redis...
+                ...write to db...
+        )
+
+    *)
+
+    let getTrackingFor (organ:string) =
+        v5 Uuidm.nil (Printf.sprintf "%s: Version %s" organ Algorithm.version)
+
+    let process =
+        function
+        | HeartTransplant(info,heart) -> 
+            {
+                organs = [heart];
+                tracking = getTrackingFor "Heart Transplant";
+                organ_transplant_type="HEART_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version;
+            }
+        | HeartAndLungsTransplant(info,heart,leftlung,rightlung) ->
+            {
+                organs = [heart; leftlung; rightlung];
+                tracking = getTrackingFor "Heart And Lungs Transplant";
+                organ_transplant_type="HEART_AND_LUNGS_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version;
+            }
+        | BilateralLungsTransplant(info,leftlung,rightlung) ->
+            {
+                organs = [leftlung; rightlung];
+                tracking = getTrackingFor "Bilateral Lung Transplant";
+                organ_transplant_type="BILATERAL_LUNGS_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version;
+            }
+        | LeftLungTransplant(info,leftlung) ->
+            {
+                organs = [leftlung];
+                tracking = getTrackingFor "Left Lung Transplant";
+                organ_transplant_type="LEFT_LUNG_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+        | RightLungTransplant(info,rightlung) ->
+            {
+                organs = [rightlung];
+                tracking = getTrackingFor "Right Lung Transplant";
+                organ_transplant_type="RIGHT_LUNG_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+        | DualKidneyTransplant(info,leftkidney,rightkidney) ->
+            {
+                organs = [leftkidney;rightkidney];
+                tracking = getTrackingFor "Dual Kidney Transplant";
+                organ_transplant_type="DUAL_KIDNEY_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+        | LeftKidneyTransplant(info,leftkidney) ->
+            {
+                organs = [leftkidney];
+                tracking = getTrackingFor "Left Kidney Transplant";
+                organ_transplant_type="LEFT_KIDNEY_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+        | RightKidneyTransplant(info,rightkidney) ->
+            {
+                organs = [rightkidney];
+                tracking = getTrackingFor "Right Kidney Transplant";
+                organ_transplant_type="RIGHT_KIDNEY_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+        | IntestinesTransplant(info,intestines) ->
+            {
+                organs = [intestines];
+                tracking = getTrackingFor "Intestines Transplant";
+                organ_transplant_type="INTESTINES_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+        | PancreasTransplant(info,pancreas) ->
+            {
+                organs = [pancreas];
+                tracking = getTrackingFor "Pancreas Transplant";
+                organ_transplant_type="PANCREAS_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+        | LiverTransplant(info,liver) ->
+            {
+                organs = [liver];
+                tracking = getTrackingFor "Liver Transplant";
+                organ_transplant_type="LIVER_01";
+                waitlist_start=Date.today();
+                intake_information=info;
+                organ_intake_version=Algorithm.version; 
+            }
+    
+    (* TODO: Provide more niche organ exceptions which could be translated for 
+    meaningful response from the user. These could be mapped for the API layer. *)
+    exception ExampleSpecificOrganTransplantIntakeException
 
 end
 
@@ -409,28 +579,33 @@ module type OrganTransplantType = sig val body_part : Organ.t end
 
 module type DonorType = sig val donortype : donortype end
 
-module Donor (DT: DonorType) = struct  
+module Donor (Make: DonorType) = struct  
 
-    type version = float
+    let version = Algorithm.version
+    let t = Make.donortype
 
-    type t = Human.t * Organ.t 
-
-    let get_organ =
-        match DT.donortype with
+    let organ : Organ.t =
+        match Make.donortype with
         | LivingDonor (_, o) -> o
         | RegularDonor (o) -> o
 
-end 
+    let human : Human.t option =
+        match Make.donortype with
+        | LivingDonor (h, _) -> Some h
+        | RegularDonor (_) -> None
+
+end
 
 module OrganTransplant (O: OrganTransplantType) = struct
 
     type t =
     {
         travel_time : int;
-        donor : t;
-        patient : t;
+        donor : Human.t;
+        patient : Human.t;
         car_transport_distance_ml: float;
         air_transport_distance_ml: float;
+        (* TODO: extend the compatibility type per type of O.body_part *)
         compatibility: abo_compatibility * hla_crossmatch option
     }
 
@@ -504,7 +679,6 @@ module OrganTransplant (O: OrganTransplantType) = struct
         | Large_Female, Average_Male -> true
         (* Unsuitable Matches *)
         | _ -> false end
-
 
 
     let is_comparably_smaller_body_type ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
@@ -647,34 +821,11 @@ module OrganTransplant (O: OrganTransplantType) = struct
                 | Minor_Mismatch _ -> false
                 | Major_Mismatch _ -> false end
 
-    (* let makeMatch ~patient(p:Patient.t) ~donor(d:Donor.t) ~tracking:(uuid:Uuidm.t) = *)
-        (* match O.body_part with *)
-        (*
-            Hemodynamic assessment results:
-                 Functional status or exercise testing results
-                 Heart failure severity or end organ function indicators
-                 Heart failure therapies
-                 Mechanical support
-                 Sensitization risk, including CPRA, peak PRA, and number of prior sternotomies
-                 Current diagnosis
-         *)
-
-        (* | Heart -> () *)
-            (* match (d:Donor.t), (p:Patient.t) with
-            | (LivingDonor ((human:Human.t), (request:OrganTransplantType))) , p ->
-                let _match = ({}:OrganTransplant.match) in
-                { 
-                    version = Algorithm.version;
-                    match = _match; }
-            | (RegularDonor dt), p ->  *)
-        (* | Liver -> ()
-        | Pancreas -> ()
-        | 
-              *)
 end
 
+module MatchTags = Set.Make(String)
 
-module Match = struct 
+module Match = struct
 
     type t = {
         version : float;
@@ -682,33 +833,32 @@ module Match = struct
         crossmatch_hla : bool;
         will_survive_travel : bool;
         correct_size : bool;
-        tags: (string * string) Hashtbl.t;
+        tags: MatchTags.t;
     }
+
+    (**
+        TODO: research logistics of end-to-end organ delivery and encapsulate
+        the distinct data needed for tracking at every step. For example, an address and
+        location name for fulfilment and testing of the organ.
+     *)
+    and status = 
+        | Evaluation
+        | Offer
+        | Accept
+        | Catalog
+        | Review
+        | Preperation
+        | Transit
+        | Holding
+        | Transplant
+        | PostOperation
 
     and match_result = {
         organ : Organ.t;
         tracking : Uuidm.t;
-        donor: Donor.t;
-        patient: Patient.t;
+        donor: Human.t;
+        patient: Human.t;
         result: t;
     }
 
-    let makeRegularMatch ~patient:(p:Patient.t) ~donor(d:Donor.t) ~organ(o:Organ.t) =
-        match d.get_organ with 
-        | o -> 
-
 end
-
-(*
-module Transplants = struct 
-*)
-(*     
-    module Heart : OrganTransplantType = struct
-        include OrganTransplant;
-
-        let body_part = 
-            let uuid = v5 Heart (Printf.sprintf "Heart Transplant: Algo V %s" Algorithm.version)
-            Organ.create
-
-    end *)
-(* end *)
