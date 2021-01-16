@@ -11,15 +11,6 @@ provider "aws" {
   region = "us-east-1"
 }
 
-data "external" "provisioner_cidr" {
-  program = ["sh", "get_provisioner_cidr.sh"]
-}
-
-variable "environment" {
-  type = string
-  default = "dev"
-}
-
 resource "aws_key_pair" "main" {
   key_name   = "opentransplant_cluster_key"
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDDSAuI5zDp6aGlFLloGdjObF29ecadkzWeVPyqEgJzdd715XHgIzklg0VZXbJnT3zmkfWsJWYlfUYc3dQPFVMRKI9+IeORzI6dMU2YxmNyC6dR3vld4tVbu6bcRwvyl+doF/kYWZDPsylMC74n1PbfUMvrQb1nDjoFMEphfTKeR4QI+sZAxahymtuw+NF6NLmM2+AXgKfgq6c1bePyvIswNpIXvn74v4zHiHhBM9Nk5GnF4EA+Vs2MJ86d3qUjrCoVgiwrC0jXFJRUK9pWfwFwB3HwD1HCJc+a7YakX6D6fMwjHfpxGddrdUM+aeVl9SLW8ksvPx0R7IAddx40lj/eVmzYbgwInB0h1gftXtPcgtXNBuTS4nCxWvz78oIeHwxFbOo2w5ZBs/fzDZu8rgjYZQrvUBWzmXUxVfK8vbM7D4xZ5eyQ+rUaHC3+y2cO0hOnVRVBySqVpcj7sIyJMM43bDmtRdG39oEzj6bNyLcSVouhvF5KMPhL+vUyOuFoxhRtEIT4Sbi2nKmlmgCdE1WDJeF9+JhIq/nRVeLBjrcj6/V5FnWLEPz+ozzdvzPRvVxg+/qx3xuAZAW4VIHBYwxsqGekMVFKILBpg3ciD8mT0TN03Lun1c9pOsjloUPKA2oS0JfUrddSAr6BTRENMaveYLAozoC/+KQejH3S/lIkWQ=="
@@ -27,7 +18,7 @@ resource "aws_key_pair" "main" {
 
 variable "ec2_instance_no" {
   type = number
-  default = 2
+  default = 1
 }
 
 variable "ec2_instance_ami" {
@@ -50,16 +41,13 @@ resource "aws_vpc" "main" {
   cidr_block  = "10.0.0.0/16"
   tags = {
     Owner = "OpenTransplant"
-    Env   = var.environment
   }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-
   tags = {
     Owner = "OpenTransplant"
-    Env   = var.environment
   }
 }
 
@@ -76,7 +64,6 @@ resource "aws_subnet" "main" {
 
   tags = {
     Owner = "OpenTransplant"
-    Env   = var.environment
   }
 }
 
@@ -89,7 +76,7 @@ resource "aws_security_group" "main" {
     from_port       = 0
     to_port         = 0
     protocol        = "-1"
-    cidr_blocks     = [aws_vpc.main.cidr_block, data.external.provisioner_cidr.result.provisioner_cidr]
+    cidr_blocks     = ["0.0.0.0/0"]
   }
 
   egress {
@@ -101,7 +88,6 @@ resource "aws_security_group" "main" {
 
   tags  = {
     Owner = "OpenTransplant"
-    Env   = var.environment
   }
 }
 
@@ -111,7 +97,6 @@ resource "aws_placement_group" "main" {
   strategy  = "spread"  // strictly places a small group of instances across distinct underlying hardware to reduce correlated failures
   tags  = {
     Owner = "OpenTransplant"
-    Env   = var.environment
   }
 }
 
@@ -133,7 +118,6 @@ resource "aws_instance" "ec2_instances" {
 
   tags = {
     Owner = "OpenTransplant"
-    Env   = var.environment
   }
 }
 
