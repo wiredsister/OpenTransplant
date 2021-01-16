@@ -1,0 +1,7 @@
+services:
+  web:
+    build: ../otapi
+  redis:
+    image: redis
+  opentransplant:
+    build: ../opentransplant

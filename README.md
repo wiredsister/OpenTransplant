@@ -90,3 +90,22 @@ docker login
 docker pull wiredsis/opentransplant:latest
 ```
 Source: https://hub.docker.com/repository/docker/wiredsis/opentransplant/tags?page=1&ordering=last_updated
+
+## Deployment
+
+Local development
+```
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml build
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d
+docker exec -it <container_id> /bin/bash
+```
+Staging
+```
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.staging.yml build
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.staging.yml up -d
+```
+Production
+```
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml build
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up -d
+```

@@ -17,4 +17,6 @@ RUN mix local.rebar --force
 ARG GIT_HASH=git_hash
 COPY . /srv
 
+RUN mix deps.get
+
 CMD ["mix", "phx.server"]
