@@ -1,2 +1,5 @@
 _build/
 password.txt
+opentransplant/OpenTransplant/bin/.merlin
+opentransplant/OpenTransplant/lib/.merlin
+opentransplant/OpenTransplant/test/.merlin
