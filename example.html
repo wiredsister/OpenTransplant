@@ -27,7 +27,21 @@
     <body>
         <h1>Organ Intake Form</h1>
         <form id="organ-post">
-            <!-- Need to haves --> 
+            <!-- Need to haves -->
+            <select size=12 required id="organtransplanttype" form="organ-post">
+                <option value="heart">Heart</option>
+                <option value="heartandlungs">Heart and Lungs</option>
+                <option value="rightlung">Lateral Right Lung</option>
+                <option value="leftlung">Lateral Left Lung</option>
+                <option value="lungs">Bilateral Lungs</option>
+                <option value="kidneys">Dual Kidneys</option>
+                <option value="rightkidney">Right Kidney</option>
+                <option value="leftkidney">Left Kidney</option>
+                <option value="pancreas">Pancreas</option>
+                <option value="liver">Liver</option>
+                <option value="intestines">Intestines</option>
+                <option value="multiple">Specify...</option>
+            </select><br> 
             <select required size=8 name="bloodtype" form="organ-post" type="select" id="bloodtype">
                 <option value="aneg">A Negative</option>
                 <option value="apos">A Positive</option>
