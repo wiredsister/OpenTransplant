@@ -20,9 +20,11 @@ defmodule OtapiWeb.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", OtapiWeb do
-  #   pipe_through :api
-  # end
+  scope "/api/v1", OtapiWeb do
+    pipe_through :api
+
+    post "/organ-intake-requests", OrganIntakeRequestControllerV1, :create
+  end
 
   # Enables LiveDashboard only for development
   #
