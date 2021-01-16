@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {
+                padding: 1em;
+            }
+            * {
+            font-family: "Helvetica", sans-serif;
+            }
+            select {
+                height: 1rem;
+                padding: .1em .5em;
+                outline: none;
+                border: none;
+            }
+            select:focus {
+                height: 10rem;
+            }
+            select:hover {
+                cursor: pointer;
+            }
+        
+        </style>
+        <title>Organ Submission</title>
+    </head>
+    <body>
+        <h1>Organ Intake Form</h1>
+        <form id="organ-post">
+            <!-- Need to haves --> 
+            <select required size=8 name="bloodtype" form="organ-post" type="select" id="bloodtype">
+                <option value="aneg">A Negative</option>
+                <option value="apos">A Positive</option>
+                <option value="bneg">B Negative</option>
+                <option value="bpos">B Positive</option>
+                <option value="oneg">O Negative</option>
+                <option value="opos">O Positive</option>
+                <option value="abneg">AB Negative</option>
+                <option value="abpos">AB Positive</option>
+            </select><br>
+            <select required size=9 name="bodysize" form="organ-post" type="select" id="bodysize">
+                <option value="infant">Infant</option>
+                <option value="toddler">Toddler</option>
+                <option value="child">Child</option>
+                <option value="smallmale">Small Male</option>
+                <option value="smallfemale">Small Female</option>
+                <option value="averagemale">Average Male</option>
+                <option value="averagefemale">Average Female</option>
+                <option value="largemale">Large Male</option>
+                <option value="largefemale">Large Female</option>
+            </select><br>
+            <input required id="extractiondate" form="organ-post" type="date" placeholder="Extraction date"/><br>
+            <input required id="extractiontime" form="organ-post" type="date" placeholder="Extraction time"/><br>
+
+            <!--TODO: you need to grab Facility Name & Facility Location from the session object 
+            on the user so you can decorate the post request with those attributes. We also need their 
+            timezone so we can appropriately create dates for them in the backend. -->
+
+            <!-- TODO: these will be optional because of the fact that some OPOs defer
+            and send their work to Histocompatibility labs for analysis... but even still, 
+            the information would need to be entered differently and this component requires
+            UX analysis if OPOs can actually do this in time. -->
+            <input id="hla_class_I" form="organ-post" type="text" placeholder="HLA Class I"/><br>
+            <input id="hla_class_II" form="organ-post" type="text" placeholder="HLA Class II"/><br>
+
+            <!-- Nice to haves --> 
+            <input form="organ-post" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" type="text" placeholder="Email"/><br>
+            <input form="organ-post" type="text" placeholder="Primary phone"/><br>
+            <input form="organ-post" type="date" placeholder="Birthdate"/><br>
+            <input form="organ-post" type="radio" id="availability-option-1"/>
+            <label for="availability-option-1"><strong>Ready</strong> for Transplant and <bold>Able</bold> to be contacted</label><br>
+            <input form="organ-post" required type="radio" id="availability-option-2"/>
+            <label for="availability-option-2"><strong>Not Ready</strong> for Transplant and <bold>Able</bold> to be contacted</label><br>
+            <input form="organ-post" required type="radio" id="availability-option-3"/>
+            <label for="availability-option-3"><strong>Not Ready</strong> for Transplant and <bold>Not Able</bold> to be contacted</label><br>
+            <input form="organ-post" required type="radio" id="availability-option-4"/>
+            <label for="availability-option-4"><strong>Ready</strong> for Transplant and <bold>Able</bold> to be contacted</label><br>
+            <input form="organ-post" type="submit" form="organ-post" /> 
+        </form>
+    </body>
+</html>
