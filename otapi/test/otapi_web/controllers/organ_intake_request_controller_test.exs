@@ -19,7 +19,7 @@ defmodule OtapiWeb.OrganIntakeRequestControllerTest do
 
     json_body = %{
       "blood_type" => "B_Pos",
-      "body_size" => "Average_Female",
+      "body_size" => "Average_Male",
       "name" => "Tim Apple",
       "email" => "tim@apple.com"
     }
