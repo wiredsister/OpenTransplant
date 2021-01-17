@@ -15,6 +15,7 @@ defmodule OtapiWeb.OrganIntakeRequestControllerTest do
   end
 
   test "/organ-intake-request stores well-formed data in Redis" do
+    # todo: this should go in an integration test, mock Redix for the unit test
     Redix.command!(:redix, ["DEL", "organ_intake_requests"])
 
     json_body = %{
