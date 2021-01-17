@@ -2,3 +2,8 @@
 *.tfstate.backup
 .terraform/*
 .terraform.lock.hcl
+_build/
+password.txt
+opentransplant/OpenTransplant/bin/.merlin
+opentransplant/OpenTransplant/lib/.merlin
+opentransplant/OpenTransplant/test/.merlin
