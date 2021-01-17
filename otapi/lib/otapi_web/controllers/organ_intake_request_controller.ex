@@ -1,4 +1,6 @@
-defmodule OtapiWeb.OrganIntakeRequestControllerV1 do
+import Redix
+
+defmodule OtapiWeb.OrganIntakeRequestController do
   use OtapiWeb, :controller
 
   def create(conn, params) do
@@ -6,6 +8,7 @@ defmodule OtapiWeb.OrganIntakeRequestControllerV1 do
       {:ok, organ_intake_request} ->
         conn |> send_resp(201, "Created")
       {:error, error} ->
+        IO.puts(error)
         conn |> send_resp(400, "Bad Request")
     end
   end
@@ -30,7 +33,6 @@ defmodule OtapiWeb.OrganIntakeRequestValidator do
     else
       {:ok, organ_intake_request}
     end
-
   end
 
   def get_blood_type(blood_type) do
