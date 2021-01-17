@@ -1,0 +1,7 @@
+services:
+  web:
+    image: otapi:prod
+  opentransplant:
+    image: opentransplant:prod
+  nginx:
+    build: ../nginx

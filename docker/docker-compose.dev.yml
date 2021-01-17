@@ -1,0 +1,17 @@
+services:
+  web:
+    image: otapi:dev
+    stdin_open: true
+    tty: true
+    ports:
+      - "80:4000"
+    volumes:
+      - ../otapi:/srv
+    command: /bin/bash
+  redis:
+    image: redis
+  opentransplant:
+    image: opentransplant:dev
+    build: ../opentransplant
+    volumes:
+      - ../opentransplant:/OpenTransplant

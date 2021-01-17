@@ -1,0 +1,7 @@
+services:
+  web:
+    image: otapi:staging
+    ports:
+      - "82:4000"
+  opentransplant:
+    image: opentransplant:staging
