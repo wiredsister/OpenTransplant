@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400&display=swap" rel="stylesheet">
+        <style>
+            body {
+                padding: 0;
+                margin: 0;
+                font-size:20px;
+            }
+
+            form {
+                display: block;
+                margin: 0 auto;
+                width: 66.66%;
+            }
+
+            * {
+                font-family: "Open Sans", "Helvetica", sans-serif;
+                box-sizing: border-box;
+            }
+
+            input[type="text"], 
+            input[type="date"],
+            input[type="email"],
+            input[type="tel"],
+            select {
+                outline: none !important;
+                border:rgb(147, 173, 243) 3px solid;
+                height: 2rem;
+                padding: .1em .5em;
+                width: 100%;
+                font-size: 1.1rem;
+                clear: both;
+            }
+
+            select {
+                font-size: .9rem;
+            }
+
+            input[type="text"]:focus,
+            input[type="email"]:focus,
+            input[type="tel"]:focus
+            {
+                border:rgb(147, 173, 243) 3px solid;
+                border-bottom: rgb(10 54 173) 3px solid;
+                border-right: rgb(10 54 173) 3px solid;
+                color: rgb(10 54 173);
+            }
+
+
+            input:invalid {
+                border-color: rgb(255, 0, 85);
+                color: rgb(255, 0, 85);
+            }
+
+            select {
+                padding: .5rem .5em 0 .5em;
+                height: 10em;
+                width: 100%;
+                display: block;
+            }
+
+            option:hover {
+                background-color: #8d8dc4;
+                color: white;
+                padding: .2em;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+            option[selected], 
+            option:checked,
+            option:active,
+            option:focus
+            {
+                background-color: whitesmoke !important;
+                color: #8d8dc4 !important;
+                padding: .2em;
+            }
+
+            fieldset {
+                outline:none;
+                border:none;
+                margin: 5em 0 3em;
+                padding: 0;
+                background-color: rgb(161, 204, 241);
+                box-shadow: 0 7px 5px #ffffff4a inset;
+                padding: 1em;
+                border-radius: 5px;
+            }
+
+            legend, input, select, small {
+                margin: 1em 0;
+            }
+
+            small {
+                display:block;
+                font-weight: bold;
+            }
+
+            input[type=submit] {
+                padding: .75em .7em;
+                width: 66.66%;
+                margin: 0 auto;
+                text-transform: uppercase;
+                font-weight: bold;
+                background-color: rgb(187, 204, 248);
+                border-radius: 5px;
+                display: block;
+                transition: .5s;
+                box-shadow: inset 0 0 15px white;
+                border: 1px solid rgba(128, 128, 128, 0.144);
+            }
+
+            input[type=submit]:hover {
+                cursor: pointer;
+                background-color: rgb(147, 173, 243);
+            }
+
+            .lil-label {
+                display: block;
+                padding: 0.1em;
+                border-top-right-radius: 5px;
+                border-top-left-radius: 5px;
+                margin-bottom: -1.8em;
+                border: 3px solid rgb(147, 173, 243);
+                background-color: rgb(147, 173, 243);
+                color: black;
+                font-weight: bold;
+                text-transform: uppercase;
+                font-size: .9rem; 
+            }
+
+            .lil-label small {
+                float:right;
+                padding: 0 0.7em;
+                margin: 0;
+            }
+
+            .radio-button-lbl {
+                padding: .5em;
+            }
+
+            .radio-button-lbl:focus{
+                outline: none;
+            }
+
+            legend {
+                color: black;
+                background-color: rgb(188 217 242);
+                border: 3px solid rgb(161, 204, 241);
+                padding: .5em 2em 0;
+                border-radius: 4px;
+                line-height: 2;
+                text-transform: uppercase;
+                font-size: .8rem;
+                margin-bottom: 3em;
+            }
+
+            h1 {
+                color:  rgba(7, 135, 194, 0.856);
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            hr  {
+                margin: 2em auto 1em;
+                border: 0;
+                height: 0;
+                border-top: 1px solid rgba(0, 0, 0, 0.1);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            }
+
+            footer {
+                background-color: rgba(7, 135, 194, .5);
+                height: 20em;
+                display: block;
+                text-align: center;
+                padding: 1em;
+                text-transform: uppercase;
+                font-weight: bold;
+            }
+
+            footer img {
+                width: 50%;
+                margin: 5em auto;
+            }
+
+            header {
+                display: block;
+                position: relative;            
+            }
+
+            ul {
+                list-style: none;
+                display: block;
+                padding: 2em;
+                text-align: right;
+                background-color: white;
+                box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+                position: fixed;
+                top: -1em;
+                right: 0;
+                left: 0;
+                z-index: 999;
+            }
+
+            li {
+                display: inline-block;
+                cursor: pointer;
+                margin: 0 1em;
+                transition: .3s;
+                font-size: .9rem;
+            }
+
+            li:hover {
+                color: rgb(11, 115, 252);
+            }
+
+            li:nth-child(1) {
+                float: left;
+                cursor: initial;
+            }
+            
+            li:nth-child(1):hover {
+                color: black;
+            }
+
+            li:nth-child(2) {
+                color: rgb(0, 102, 255);
+                float:left;
+                cursor: pointer;
+                text-transform: uppercase;
+            }
+
+            li:nth-child(2):hover {
+                color: rgb(0, 140, 255);
+            }
+
+            .container {
+                padding: 10em 0;
+                background: aliceblue;
+            }
+            
+        </style>
+        <title>Organ Submission</title>
+        
+    </head>
+    <body>
+        <header>
+            <ul>
+                <li>Welcome back, Gina!</li>
+                <li>Clevland Clinic (44195)</li>
+                <li>Home</li>
+                <li>Organ Intake</li>
+                <li>About OpenTransplant</li>
+                <li>Log Out</li>
+            </ul>
+        </header>
+        <div class="container">
+            <h1>Organ Intake Form</h1>
+            <form id="organ-post">
+                <!-- Need to haves -->
+                <fieldset name="required_information" form="organ-post">
+                    <legend>Basic Intake Information</legend>
+                    <label class="lil-label" for="organtransplanttype">Organ Intake Type: <small id="selected_organ_transplant_type_label">Rule Specific Workflows For Organs...</small></label>
+                    <select size=12 required id="organtransplanttype" form="organ-post">
+                        <option value="heart">Heart</option>
+                        <option value="heartandlungs">Heart and Lungs</option>
+                        <option value="rightlung">Lateral Right Lung</option>
+                        <option value="leftlung">Lateral Left Lung</option>
+                        <option value="lungs">Bilateral Lungs</option>
+                        <option value="kidneys">Dual Kidneys</option>
+                        <option value="rightkidney">Right Kidney</option>
+                        <option value="leftkidney">Left Kidney</option>
+                        <option value="pancreas">Pancreas</option>
+                        <option value="liver">Liver</option>
+                        <option value="intestines">Intestines</option>
+                        <option value="multiple">Specify...</option>
+                    </select><br>
+                    <label class="lil-label" for="bloodtype">Blood Type: <small id="selected_blood_type_label">For Basic Compatibility Matching and Filtering...</small></label>
+                    <select required size=8 name="bloodtype" form="organ-post" type="select" id="bloodtype">
+                        <option value="aneg">A Negative</option>
+                        <option value="apos">A Positive</option>
+                        <option value="bneg">B Negative</option>
+                        <option value="bpos">B Positive</option>
+                        <option value="oneg">O Negative</option>
+                        <option value="opos">O Positive</option>
+                        <option value="abneg">AB Negative</option>
+                        <option value="abpos">AB Positive</option>
+                    </select><br>
+                    <label class="lil-label" for="bodysize">Body Type: <small id="selected_body_type_label">For Approximation of Organ Size...</small></label>
+                    <select required size=9 name="bodysize" form="organ-post" type="select" id="bodysize">
+                        <option value="infant">Infant</option>
+                        <option value="toddler">Toddler</option>
+                        <option value="child">Child</option>
+                        <option value="smallmale">Small Male</option>
+                        <option value="smallfemale">Small Female</option>
+                        <option value="averagemale">Average Male</option>
+                        <option value="averagefemale">Average Female</option>
+                        <option value="largemale">Large Male</option>
+                        <option value="largefemale">Large Female</option>
+                    </select><br>
+                    <label class="lil-label" for="extractiondate">Extraction Date:</label>
+                    <input required id="extractiondate" form="organ-post" type="date" placeholder="Extraction date"/><br>
+                    <label class="lil-label" for="extractiontime">Extraction Time:</label>
+                    <input required pattern="([01]?[0-9]{1}|2[0-3]{1}):[0-5]{1}[0-9]{1}" id="extractiontime" form="organ-post" type="text" placeholder="00:00"/><br>
+        
+                    <!--TODO: you need to grab Facility Name & Facility Location from the session object 
+                    on the user so you can decorate the post request with those attributes. We also need their 
+                    timezone so we can appropriately create dates for them in the backend. -->
+        
+                    <!-- TODO: these will be optional because of the fact that some OPOs defer
+                    and send their work to Histocompatibility labs for analysis... but even still, 
+                    the information would need to be entered differently and this component requires
+                    UX analysis if OPOs can actually do this in time. -->
+                    <label class="lil-label" for="hla_class_I">HLA Type Infomration, Class I:</label>
+                    <input id="hla_class_I" form="organ-post" type="text" placeholder="HLA Class I"/><br>
+                    <label class="lil-label" for="hla_class_II">HLA Type Infomration, Class II:</label>
+                    <input id="hla_class_II" form="organ-post" type="text" placeholder="HLA Class II"/><br>    
+                </fieldset>
+    
+                <fieldset name="donor_information" form="organ-post">
+                    <legend>Living Donor (Optional)</legend>
+                     <!-- Nice to haves -->
+                    <label class="lil-label" for="email">Email:</label>
+                    <input id="email" form="organ-post" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" type="email" placeholder="jane.doe@gmail.com"/><br>
+                    <label class="lil-label" for="phonenumber">Phone Number:</label>
+                    <input id="phonenumber" form="organ-post" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" type="tel" placeholder="123-456-7890"/><br>
+                    <label class="lil-label" for="birthdate">Date of Birth:</label>
+                    <input form="organ-post" type="date" placeholder="Birthdate"/><br>
+    
+                    <hr>
+                    <input checked form="organ-post" type="radio" id="availability-option-1"/>
+                    <label class="radio-button-lbl" for="availability-option-1"><strong>Ready</strong> for transplant and <strong>able</strong> to be contacted</label><br>
+                    <input form="organ-post" required type="radio" id="availability-option-2"/>
+                    <label class="radio-button-lbl" for="availability-option-2"><strong>Not Ready</strong> for transplant and <strong>able</strong> to be contacted</label><br>
+                    <input form="organ-post" required type="radio" id="availability-option-3"/>
+                    <label class="radio-button-lbl" for="availability-option-3"><strong>Not Ready</strong> for transplant and <strong>not able</strong> to be contacted</label><br>
+                    <input form="organ-post" required type="radio" id="availability-option-4"/>
+                    <label class="radio-button-lbl" for="availability-option-4"><strong>Ready</strong> for transplant and <strong>not able</strong> to be contacted</label><br>
+                </fieldset>
+    
+                <input form="organ-post" type="submit" form="organ-post" />
+            </form>
+        </div>
+        <footer>
+            <small>Organ Intake - Alpha Version 0.0.1 </small>
+            <img src="./OpenTransplant_transparent.svg" />
+        </footer>
+
+
+        <script type="text/javascript">
+
+            var option_1 = document.getElementById("availability-option-1");
+            var option_2 = document.getElementById("availability-option-2");
+            var option_3 = document.getElementById("availability-option-3");
+            var option_4 = document.getElementById("availability-option-4");
+
+            var clear = (nodes, classList) => {
+                nodes.forEach(n => {
+                    n.classList = classList
+                    n.checked = false;
+                })
+            }
+
+            var check = (nodes, classList) => {
+                nodes.forEach(n => {
+                    n.classList = classList
+                    n.checked = true;
+                    n.selected = true;
+                })
+            }
+
+            var clearAllRadioBoxes = () => { 
+                clear([option_1, option_2, option_3, option_4], ["radio-button"])
+            }
+
+            option_1.addEventListener('focus', (ev) => {
+                clearAllRadioBoxes();
+                check(option_1, ["radio-button", "--selected"]);
+            });
+
+            option_2.addEventListener('focus', (ev) => {
+                clearAllRadioBoxes();
+                check(option_2, ["radio-button", "--selected"]);
+            });
+
+            option_3.addEventListener('focus', (ev) => {
+                clearAllRadioBoxes();
+                check(option_3, ["radio-button", "--selected"]);
+
+            });
+
+            option_4.addEventListener('focus', (ev) => {
+                clearAllRadioBoxes();
+                check(option_4, ["radio-button", "--selected"]);
+            });
+
+            var selected_organ_transplant_type_label = document.getElementById("selected_organ_transplant_type_label");
+            var organ_transplant_type_dropdown = document.getElementById("organtransplanttype");
+
+            organ_transplant_type_dropdown.addEventListener("click", () => {
+                var index = organ_transplant_type_dropdown.options.selectedIndex;
+                var text = (organ_transplant_type_dropdown.options[index]).outerText;
+                selected_organ_transplant_type_label.innerText = text;
+            });
+
+            var selected_body_type_label = document.getElementById("selected_body_type_label");
+            var body_type_dropdown = document.getElementById("bodysize");
+
+            body_type_dropdown.addEventListener("click", () => {
+                var index = body_type_dropdown.options.selectedIndex;
+                var text = (body_type_dropdown.options[index]).outerText;
+                selected_body_type_label.innerText = text;
+
+            });
+
+            var selected_blood_type_label = document.getElementById("selected_blood_type_label");
+            var blood_type_dropdown = document.getElementById("bloodtype");
+
+            blood_type_dropdown.addEventListener("click", () => {
+                var index = blood_type_dropdown.options.selectedIndex;
+                var text = (blood_type_dropdown.options[index]).outerText;
+                selected_blood_type_label.innerText = text;
+
+            });
+        </script>
+    </body>
+</html>
