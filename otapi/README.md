@@ -1,19 +1,15 @@
-# Otapi
+## API
 
-To start your Phoenix server:
+### Frontend
 
-  * Install dependencies with `mix deps.get`
-  * Install Node.js dependencies with `npm install` inside the `assets` directory
-  * Start Phoenix endpoint with `mix phx.server`
+GET /
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+GET /user
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+### Backend
 
-## Learn more
+POST /api/organ-intake-requests
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+GET /api/users/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+GET /api/organ-intake-requests/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
