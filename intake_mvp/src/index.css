@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+}
+
+.bg-primary {
+  background-color: #3e59c0;
+}
+
+.bg-secondary {
+  background-color: #8bc3e0;
+}
+
+.fill-secondary {
+  fill: #8bc3e0;
+}
+
+.text-secondary {
+  color: #8bc3e0;
+}
+
+.text-secondary-dark {
+  color: #28546c;
+}
+
+.bg-secondary-dark {
+  background-color: #28546c;
+}
+
+.border-secondary-light {
+  border-color: #badef2;
+}
+
+.bottom--0 {
+  bottom: -1px;
+}
+
+.top--0 {
+  top: 1px;
+}
