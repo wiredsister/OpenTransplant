@@ -5,7 +5,7 @@
 
 ### Project Status: 
 
-In Development! Not ready to be used in any pilot or production scenario.
+Reference implementation only; not intended for use in any pilot or production scenario.
 
 ### Maintainer
 https://github.com/wiredsister
@@ -17,10 +17,12 @@ https://github.com/yanlow, https://github.com/wiredsister
 
 We believe every country and community, regardless of wealth or ability, should be able to operate an organ transplant network for its citizens. We believe this organ transplant network should be safe, auditable, free of fraud, waste, and abuse; we believe this system should benefit life and reduce death. 
 
+<< TODO: @meredithstewart needs to add some edits >>
+
 ### Key Features & Road Map:
 - organ decay is reduced
 - patient outcomes are optimized for
-- endangered populations are protected
+- underserved populations and communities of color are measured against population for equity (TODO: think about how we can convey importance of data analytics and preventatitve warnings to policy makers)
 - the system can measure end to end actions and the implications of policy changes quickly and easily
 - the system should be near real-time with zero downtime
 - the system should not require paper or human intervention
@@ -38,7 +40,7 @@ This entire application was designed and built using publically available inform
 - FrontEnd: Node.js, SCSS styling
 - Backend Matching & Scheduling: OCaml services
 
-### Short Term Tech Road Map
+### Tech Road Map
 
 1. Webapp for OPOs
 2. Webapp for Patient
