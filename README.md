@@ -51,6 +51,10 @@ This entire application was designed and built using publically available inform
 
 ```ocaml
 
+type donortype = 
+    | LivingDonor of Human.t * Policy.living_donor_requirements
+    | RegularDonor of Human.t
+    | NearDeathDonor of Human.t
 
 type organ_transplant_type =
     (* Grafting *)
