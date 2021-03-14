@@ -47,6 +47,43 @@ This entire application was designed and built using publically available inform
 3. EHR FHIR API integration for EPIC & Cerner
 4. Gherkin & Cucumber Scenario tests for each organ & user health
 
+### Supported Organ Donation & Donor Types Out of Box: 
+
+```ocaml
+
+
+type organ_transplant_type =
+    (* Grafting *)
+    | HeartGraft of donortype Organ.t
+    | KidneyGraft of donortype Organ.t
+    | LungGraft of donortype Organ.t
+    | LiverGraft of donortype Organ.t
+    | IntestinesGraft of donortype Organ.t
+    | PancreasGraft of donortype Organ.t
+    | BoneMarrowGraft of donortype Organ.t
+    | Grafts of organ_transplant_type list
+
+    (* Whole Organ Transplants *)
+    | HeartTransplant of donortype Organ.t
+    | PancreasTransplant of donortype Organ.t
+    | LiverTransplant of donortype Organ.t 
+    | IntestinesTransplant of donortype Organ.t
+    | SingleKidneyTransplant of donortype Organ.t
+    | DualKidneyTransplant of donortype Organ.t
+    | BilateralLungTransplant of donortype Organ.t
+    | SingleLungTransplant of donortype Organ.t
+    | HeartAndLungsTransplant of donortype Organ.t * organ_transplant_type
+    | ManyOrganTransplant of organ_transplant_type list
+
+    (* Tissue Transplant *)
+    | BoneMarrowTransplant of donortype Organ.t
+    | TissueTransplant of donortype Organ.t
+    | ManyTissueTransplants of donortype Organ.t list
+    | TissueGraft of donortype Organ.t
+    | ManyTissueGrafts of donortype Organ.t list
+
+```
+
 ## Build & Run
 
 ### OCaml Environment
