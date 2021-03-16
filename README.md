@@ -8,10 +8,10 @@
 Reference implementation only; not intended for use in any pilot or production scenario.
 
 ### Maintainer
-https://github.com/wiredsister
+[@wiredsister](https://github.com/wiredsister), Government Professional Account: [@ginabeena](https://github.com/ginabeena)
 
 ### Authors
-https://github.com/yanlow, https://github.com/wiredsister
+[@yanlow](https://github.com/yanlow), [@wiredsister](https://github.com/wiredsister)
 
 ### Project Ethos
 
