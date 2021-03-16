@@ -265,44 +265,79 @@
                 <!-- Need to haves -->
                 <fieldset name="required_information" form="organ-post">
                     <legend>Basic Intake Information</legend>
-                    <label class="lil-label" for="organtransplanttype">Organ Intake Type: <small id="selected_organ_transplant_type_label">Rule Specific Workflows For Organs...</small></label>
-                    <select size=12 required id="organtransplanttype" form="organ-post">
-                        <option value="heart">Heart</option>
-                        <option value="heartandlungs">Heart and Lungs</option>
-                        <option value="rightlung">Lateral Right Lung</option>
-                        <option value="leftlung">Lateral Left Lung</option>
-                        <option value="lungs">Bilateral Lungs</option>
-                        <option value="kidneys">Dual Kidneys</option>
-                        <option value="rightkidney">Right Kidney</option>
-                        <option value="leftkidney">Left Kidney</option>
-                        <option value="pancreas">Pancreas</option>
-                        <option value="liver">Liver</option>
-                        <option value="intestines">Intestines</option>
-                        <option value="multiple">Specify...</option>
-                    </select><br>
-                    <label class="lil-label" for="bloodtype">Blood Type: <small id="selected_blood_type_label">For Basic Compatibility Matching and Filtering...</small></label>
-                    <select required size=8 name="bloodtype" form="organ-post" type="select" id="bloodtype">
-                        <option value="aneg">A Negative</option>
-                        <option value="apos">A Positive</option>
-                        <option value="bneg">B Negative</option>
-                        <option value="bpos">B Positive</option>
-                        <option value="oneg">O Negative</option>
-                        <option value="opos">O Positive</option>
-                        <option value="abneg">AB Negative</option>
-                        <option value="abpos">AB Positive</option>
-                    </select><br>
-                    <label class="lil-label" for="bodysize">Body Type: <small id="selected_body_type_label">For Approximation of Organ Size...</small></label>
-                    <select required size=9 name="bodysize" form="organ-post" type="select" id="bodysize">
-                        <option value="infant">Infant</option>
-                        <option value="toddler">Toddler</option>
-                        <option value="child">Child</option>
-                        <option value="smallmale">Small Male</option>
-                        <option value="smallfemale">Small Female</option>
-                        <option value="averagemale">Average Male</option>
-                        <option value="averagefemale">Average Female</option>
-                        <option value="largemale">Large Male</option>
-                        <option value="largefemale">Large Female</option>
-                    </select><br>
+
+                    <label class="lil-label" for="organtransplanttype"><small id="selected_organ_transplant_type_label">...type of transplant</small></label>
+                    <div id="organtransplanttype">
+                        <input checked form="organ-post" type="radio" id="heart"/>
+                        <label class="radio-button-lbl" for="heart">Heart Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="heartandlungs"/>
+                        <label class="radio-button-lbl" for="heartandlungs">Heart and Lungs</label><br>
+                        <input form="organ-post" required type="radio" id="rightlung"/>
+                        <label class="radio-button-lbl" for="rightlung">Lateral Right Lung Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="leftlung"/>
+                        <label class="radio-button-lbl" for="leftlung">Lateral Left Lung Transplant</label><br>
+                        <input checked form="organ-post" type="radio" id="bilaterallungs"/>
+                        <label class="radio-button-lbl" for="bilaterallungs">Bilateral Lung Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="leftkidney"/>
+                        <label class="radio-button-lbl" for="leftkidney">Single Left Kidney Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="rightkidney"/>
+                        <label class="radio-button-lbl" for="rightkidney">Single Right Kidney Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="rightkidney"/>
+                        <label class="radio-button-lbl" for="dualkidney">Dual Kidney Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="dualkidney"/>
+                        <label class="radio-button-lbl" for="pancreas">Pancreas Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="pancreas"/>
+                        <label class="radio-button-lbl" for="intestines">Intestines Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="intestines"/>
+                        <label class="radio-button-lbl" for="liver">Liver Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="liver"/>
+                    </div>
+                    <label class="lil-label" for="bloodtype">Blood Type: <small id="selected_blood_type_label"></small></label>
+                    <div id="bloodtype">
+                        <input checked form="organ-post" type="radio" id="aneg"/>
+                        <label class="radio-button-lbl" for="aneg">A Negative</label><br>
+                        <input form="organ-post" required type="radio" id="apos"/>
+                        <label class="radio-button-lbl" for="heartandlungs">A Positive</label><br>
+                        <input form="organ-post" required type="radio" id="bpos"/>
+                        <label class="radio-button-lbl" for="bpos">B Positive</label><br>
+                        <input form="organ-post" required type="radio" id="bneg"/>
+                        <label class="radio-button-lbl" for="bneg">B Negative</label><br>
+                        <input checked form="organ-post" type="radio" id="opos"/>
+                        <label class="radio-button-lbl" for="opos">O Positive</label><br>
+                        <input form="organ-post" required type="radio" id="oneg"/>
+                        <label class="radio-button-lbl" for="oneg">O Negative</label><br>
+                        <input form="organ-post" required type="radio" id="abpos"/>
+                        <label class="radio-button-lbl" for="abpos">AB Positive</label><br>
+                        <input form="organ-post" required type="radio" id="abneg"/>
+                        <label class="radio-button-lbl" for="abneg">AB Negative<strong><br>>
+                    </div>
+                    <label class="lil-label" for="bodysize">Body Type: <small id="selected_body_type_label">...for approximation of volumetric organ size</small></label>
+                    <div id="bodysize">
+                        <input checked form="organ-post" type="radio" id="heart"/>
+                        <label class="radio-button-lbl" for="heart">Heart Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="heartandlungs"/>
+                        <label class="radio-button-lbl" for="heartandlungs">Heart and Lungs</label><br>
+                        <input form="organ-post" required type="radio" id="rightlung"/>
+                        <label class="radio-button-lbl" for="rightlung">Lateral Right Lung Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="leftlung"/>
+                        <label class="radio-button-lbl" for="leftlung">Lateral Left Lung Transplant</label><br>
+                        <input checked form="organ-post" type="radio" id="bilaterallungs"/>
+                        <label class="radio-button-lbl" for="bilaterallungs">Bilateral Lung Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="leftkidney"/>
+                        <label class="radio-button-lbl" for="leftkidney">Single Left Kidney Transplant</label><br>
+                        <input form="organ-post" required type="radio" id="rightkidney"/>
+                        <label class="radio-button-lbl" for="rightkidney"></label><br>
+                        <input form="organ-post" required type="radio" id="rightkidney"/>
+                        <label class="radio-button-lbl" for="dualkidney"><strong>Ready</strong> for transplant and <strong>not able</strong> to be contacted</label><br>
+                        <input form="organ-post" required type="radio" id="dualkidney"/>
+                        <label class="radio-button-lbl" for="pancreas"><strong>Ready</strong> for transplant and <strong>not able</strong> to be contacted</label><br>
+                        <input form="organ-post" required type="radio" id="pancreas"/>
+                        <label class="radio-button-lbl" for="intestines"><strong>Ready</strong> for transplant and <strong>not able</strong> to be contacted</label><br>
+                        <input form="organ-post" required type="radio" id="intestines"/>
+                        <label class="radio-button-lbl" for="liver"><strong>Ready</strong> for transplant and <strong>not able</strong> to be contacted</label><br>
+                        <input form="organ-post" required type="radio" id="liver"/>
+                    </div>
+
                     <label class="lil-label" for="extractiondate">Extraction Date:</label>
                     <input required id="extractiondate" form="organ-post" type="date" placeholder="Extraction date"/><br>
                     <label class="lil-label" for="extractiontime">Extraction Time:</label>
