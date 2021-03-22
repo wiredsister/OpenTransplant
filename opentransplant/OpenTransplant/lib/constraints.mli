@@ -14,6 +14,8 @@ sig
 
     val version : string
 
+    (* TODO: Research required on actual living donor requirements... 
+       Are there more requirements? *)
     type living_donor_requirements = 
     {
         full_medical_eval_passed : bool;
@@ -21,6 +23,7 @@ sig
         psychosocial_examination_passed : bool;
     }
 
+    (* TODO: Research required on actual neardeath donor requirements *)
     type near_death_donor_requirements = 
     {
         donorfamily_approval: bool;
@@ -67,21 +70,35 @@ sig
 
     end
 
-    type 'organ_or_graft t =
-    | Heart : string -> Uuidm.t t
-    | Lung : Sidedness.t * string -> Uuidm.t t
-    | Liver : string -> Uuidm.t t
-    | Kidney : Sidedness.t * string -> Uuidm.t t
-    | Pancreas : string -> Uuidm.t t
-    | Intestines : string -> Uuidm.t t
-    | BoneMarrow : string -> Uuidm.t t
-    | Bone : string -> Uuidm.t t
-    | Tendon : string -> Uuidm.t t
-    | VeinsOrArteries : string -> Uuidm.t t
-    | HeartValves : string -> Uuidm.t t
-    | Corneas : (Sidedness.t * string) ->Uuidm.t t
-    | Graft : string -> Uuidm.t t
-        
+    type cold_time = float ref
+    type warm_time = float ref
+
+    
+    type organ_details = 
+    {
+        cold_time : cold_time;
+        warm_time : warm_time;
+        tracking_id : Uuidm.t;
+        medical_notes: string;
+        organ_type: t;
+        sidedness: Sidedness.t option;
+    }
+
+    type _ t = 
+    | Heart : string -> organ_details t
+    | Lung : Sidedness.t * string -> organ_details t
+    | Liver : string -> organ_details t
+    | Kidney : Sidedness.t * string -> organ_details t
+    | Pancreas : string -> organ_details t
+    | Intestines : string -> organ_details t
+    | BoneMarrow : string -> organ_details t
+    | Bone : string -> organ_details t
+    | Tendon : string -> organ_details t
+    | VeinsOrArteries : string -> organ_details t
+    | HeartValves : string -> organ_details t
+    | Corneas : (Sidedness.t * string) -> organ_details t
+    | Graft : string -> organ_details t
+
     val to_string : 'organ_or_graft t -> string
     
     val of_string : string -> 'organ_or_graft t
@@ -158,11 +175,12 @@ sig
 
     type details =
     {
-        preferred_pronouns: string;
+        pronouns: string;
+        ssn: string;
         preferred_name: string;
-        firstname : string;
-        middlename: string;
-        lastname: string;
+        first_name : string;
+        middle_name: string;
+        last_name: string;
         email: string;
         primary_phone: string;
         zipcode: string;
@@ -341,7 +359,6 @@ module type OrganTransplantType =
     type distance_compatibility = Transit.distance_compatibility
 
     type t =
-    | PlannedTransplant of 
         {
         transplant_id: Uuidm.t;
         donor : Human.donortype;
@@ -353,8 +370,7 @@ module type OrganTransplantType =
         hla_crossmatch: Human.hla_crossmatch;
         illness_compatibility: illness_compatibility option;
         rules: rules option;
-        seeking: Human.organ_transplant_type; } 
-    | ImproperMatch
+        seeking: Human.organ_transplant_type; }
 
 end
 
