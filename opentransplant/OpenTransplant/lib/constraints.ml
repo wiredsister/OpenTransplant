@@ -6,6 +6,8 @@ let (>>) f g = fun x -> g(f(x))
 module Algorithm = 
 struct 
 
+    exception NotYetImplemented of string
+
     let version = "Alpha.0.0.1"
     let gen_uuid () = v5 Uuidm.nil (Printf.sprintf "Algo v: %s" version)
     let running_instance = gen_uuid();
@@ -394,6 +396,83 @@ struct
 
     let version = Algorithm.version
 
+    module BodySize = struct 
+
+        type  metric =
+        {
+            (* meters *)
+            height_m: float;
+            (* kilograms *)
+            weight_kg: float;
+            metric_bmi: float;
+        }
+
+        type imperial =
+        {
+            (* feet *)
+            height_ft: float;
+            (* pounds *)
+            weight_lbs: float;
+            imperial_bmi: float;
+        }
+
+        type stats = 
+        | Imperial of imperial
+        | Metric of metric
+        
+        type t =
+        | Infant of stats
+        | Toddler of stats
+        | Male_Child of stats
+        | Female_Child of stats
+        | Small_Female of stats
+        | Small_Male of stats
+        | Average_Female of stats
+        | Average_Male of stats
+        | Large_Female of stats
+        | Large_Male of stats
+
+        (** Source: 
+        
+        https://www.cdc.gov/healthyweight/assessing
+        /bmi/childrens_bmi/childrens_bmi_formula.html#:~:text=The
+        %20formula%20for%20BMI%20is,to%20convert%20this%20to%20meters
+        .&text=When%20using%20English%20measurements%2C%20pounds%20
+        should%20be%20divided%20by%20inches%20squared. 
+        
+        *)
+        let getMetric ~height:(height_m:float) ~weight:(weight_kg:float) : metric =
+        { 
+            weight_kg = weight_kg;
+            height_m = height_m;
+            metric_bmi = weight_kg /. height_m**2. 
+        }
+
+        (** Source: 
+        
+        https://www.cdc.gov/healthyweight/assessing
+        /bmi/childrens_bmi/childrens_bmi_formula.html#:~:text=The
+        %20formula%20for%20BMI%20is,to%20convert%20this%20to%20meters
+        .&text=When%20using%20English%20measurements%2C%20pounds%20
+        should%20be%20divided%20by%20inches%20squared. 
+        
+        *)
+        let getEnglish ~height:(height_ft:float) ~weight:(weight_lbs:float) : imperial =
+        { 
+            weight_lbs = weight_lbs;
+            height_ft = height_ft;
+            imperial_bmi = (703. *. weight_lbs) /. height_ft**2.
+        }
+
+        let convertImperialtoMetric =
+            function
+            | { weight_lbs = weight_lbs; height_ft = height_ft; _ } ->
+               let metric_weight = weight_lbs /. 2.2046 in
+               let metric_height = height_ft *. 0.3048 in
+               getMetric ~weight:metric_weight ~height:metric_height
+
+    end
+
     module Death = struct
 
         (** In reference to https://github.com/wiredsister/OpenTransplant/issues/33 *)
@@ -428,7 +507,7 @@ struct
     {
         details: details;
         blood_type: blood_type;
-        body_size: body_size;
+        body_size: BodySize.t;
         hla_class_I: hla_class_I;
         hla_class_II: hla_class_II;
         (* Dictionary: Key:ICD10_CODE, Value:TEST_RESULT *)
@@ -437,19 +516,6 @@ struct
         waitlist_start: Date.t;
         availability: availability;
     }
-
-    and body_size =
-    | Infant of stats
-    | Child of stats
-    | Toddler of stats
-    | Male_Child of stats
-    | Female_Child of stats
-    | Small_Female of stats
-    | Small_Male of stats
-    | Average_Female of stats
-    | Average_Male of stats
-    | Large_Female of stats
-    | Large_Male of stats
 
     and details = 
     {
@@ -499,28 +565,6 @@ struct
         | Untested
         | AwaitingTest
 
-    and  metric =
-    {
-        (* meters *)
-        height_m: float;
-        (* kilograms *)
-        weight_kg: float;
-        metric_bmi: float;
-    }
-
-    and english =
-    {
-        (* feet *)
-        height_ft: float;
-        (* pounds *)
-        weight_lbs: float;
-        english_bmi: float;
-    }
-
-    and stats = 
-        | English of english
-        | Metric of metric
-
     let has_disease (patient:t) (disease:string) : bool = begin
         let { icd_10_codes = tags; _ } = patient in
         if Hashtbl.mem tags disease
@@ -549,52 +593,25 @@ struct
     let is_EBV_negative (p:t) = not (has_disease p "B27.9")
     let is_COVID_19_negative (p:t) = not (has_disease p "U07.1")
 
-    module BodyMass = struct 
-     
-        (** Source: 
-        
-        https://www.cdc.gov/healthyweight/assessing
-        /bmi/childrens_bmi/childrens_bmi_formula.html#:~:text=The
-        %20formula%20for%20BMI%20is,to%20convert%20this%20to%20meters
-        .&text=When%20using%20English%20measurements%2C%20pounds%20
-        should%20be%20divided%20by%20inches%20squared. 
-        
-        *)
-        let getMetric ~height:(height_m:float) ~weight:(weight_kg:float) : metric =
-        { 
-            weight_kg = weight_kg;
-            height_m = height_m;
-            metric_bmi = weight_kg /. height_m**2. 
-        }
-
-        (** Source: 
-        
-        https://www.cdc.gov/healthyweight/assessing
-        /bmi/childrens_bmi/childrens_bmi_formula.html#:~:text=The
-        %20formula%20for%20BMI%20is,to%20convert%20this%20to%20meters
-        .&text=When%20using%20English%20measurements%2C%20pounds%20
-        should%20be%20divided%20by%20inches%20squared. 
-        
-        *)
-        let getEnglish ~height:(height_ft:float) ~weight:(weight_lbs:float) : english =
-        { 
-            weight_lbs = weight_lbs;
-            height_ft = height_ft;
-            english_bmi = (703. *. weight_lbs) /. height_ft**2.
-        }
-
-        let convertEnglishtoMetric =
-            function
-            | { weight_lbs = weight_lbs; height_ft = height_ft; _ } ->
-               let metric_weight = weight_lbs /. 2.2046 in
-               let metric_height = height_ft *. 0.3048 in
-               getMetric ~weight:metric_weight ~height:metric_height
-    
-    end
+    type donorinfo = {
+        bloodtype: blood_type;
+        hla_information: hla_crossmatch;
+        birth_date: Date.t;
+        body_size: BodySize.t;
+        time_of_death: Date.t;
+        cold_time_start: Date.t;
+        death_mechanism: Death.mechanism;
+        death_type: Death.t;
+        zipcode: string;
+        disease_information: (string, string) Hashtbl.t;
+        (* The tags could be where we put racial information, demographic information, 
+        or really, any other free floating identifier we want. *)
+        tags: (string, string) Hashtbl.t 
+    }
 
     type donortype = 
         | LivingDonor of t * Policy.living_donor_requirements
-        | RegularDonor of t
+        | RegularDonor of donorinfo
         | NearDeathDonor of t
 
     type organ_transplant_type =
@@ -649,9 +666,9 @@ struct
         | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> true
         | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
 
-    let good_fit m1 m2 =
+    let good_fit (m1:BodySize.metric) (m2:BodySize.metric) =
         match m1, m2 with
-        | { height_m = donor_height; weight_kg = donor_weight; _ },
+        { height_m = donor_height; weight_kg = donor_weight; _ },
         { height_m = patient_height; weight_kg = patient_weight; _ } ->
             let height_delta = abs ((int_of_float donor_height) - (int_of_float patient_height)) in
             let weight_delta = abs ((int_of_float patient_weight) - (int_of_float donor_weight)) in
@@ -659,75 +676,78 @@ struct
             let policy_height = (Policy.reasonable_metric_delta_organ_height |> int_of_float) in
             weight_delta <= policy_weight || height_delta <= policy_height
 
-    let smaller_fit m1 m2 =
+    let smaller_fit (m1: BodySize.metric) (m2: BodySize.metric) =
         match m1, m2 with
         | { height_m = donor_height; weight_kg = donor_weight; _ },
-        { height_m = patient_height; weight_kg = patient_weight; _ } ->
+          { height_m = patient_height; weight_kg = patient_weight; _ } ->
             let height_delta = donor_height -. patient_height in
             let weight_delta = donor_weight -. patient_weight in
             let policy_weight = Policy.reasonable_metric_delta_organ_weight in
             let policy_height = Policy.reasonable_metric_delta_organ_height in
             weight_delta <= policy_weight || height_delta <= policy_height
 
-    let crunch m1 m2 =    
-        begin match m1, m2 with 
-        | English m, English m2 -> 
-            let converted_m = BodyMass.convertEnglishtoMetric m in
-            let converted_m2 = BodyMass.convertEnglishtoMetric m2 in
-            good_fit converted_m converted_m2
-        | English m, Metric m2 -> 
-            let converted_m = BodyMass.convertEnglishtoMetric m in
-            good_fit converted_m m2
-        | Metric m, English m2 ->
-            let converted_m2 =BodyMass.convertEnglishtoMetric m2 in
-            good_fit m converted_m2
-        | Metric m, Metric m2 -> good_fit m m2 end
-            
-    let crunchSmallerFit m1 m2 =    
-        begin match m1, m2 with 
-        | English m, English m2 -> 
-            let converted_m = BodyMass.convertEnglishtoMetric m in
-            let converted_m2 = BodyMass.convertEnglishtoMetric m2 in
-            smaller_fit converted_m converted_m2
-        | English m, Metric m2 -> 
-            let converted_m = BodyMass.convertEnglishtoMetric m in
-            smaller_fit converted_m m2
-        | Metric m, English m2 ->
-            let converted_m2 =BodyMass.convertEnglishtoMetric m2 in
-            smaller_fit m converted_m2
-        | Metric m, Metric m2 -> smaller_fit m m2 end
+    let crunch (m1:BodySize.stats) (m2:BodySize.stats) =
+        match m1, m2 with
+        | BodySize.Imperial s, BodySize.Imperial s2 -> 
+            let converted_1 = BodySize.convertImperialtoMetric s in
+            let converted_2 = BodySize.convertImperialtoMetric s2 in
+            good_fit converted_1 converted_2
+        | BodySize.Metric s, BodySize.Metric s2 -> 
+            good_fit s s2
+        | BodySize.Metric s, BodySize.Imperial s2 ->
+            let converted = BodySize.convertImperialtoMetric s2 in
+            good_fit s converted
+        | BodySize.Imperial s, BodySize.Metric s2 ->
+            let converted = BodySize.convertImperialtoMetric s in
+            good_fit converted s2
 
-    let is_comparable_body_type ~donor:(d:t) ~patient:(p:t) : bool =
+    let crunchSmallerFit (m1:BodySize.stats) (m2:BodySize.stats) =
+        match m1, m2 with    
+        | BodySize.Imperial s, BodySize.Imperial s2 -> 
+            let converted_1 = BodySize.convertImperialtoMetric s in
+            let converted_2 = BodySize.convertImperialtoMetric s2 in
+            smaller_fit converted_1 converted_2
+        | BodySize.Metric s, BodySize.Metric s2 -> 
+            smaller_fit s s2
+        | BodySize.Metric s, BodySize.Imperial s2 ->
+            let converted = BodySize.convertImperialtoMetric s2 in
+            smaller_fit s converted
+        | BodySize.Imperial s, BodySize.Metric s2 ->
+            let converted = BodySize.convertImperialtoMetric s in
+            smaller_fit converted s2
+
+
+    let is_comparable_body_type ~donor:(d:donorinfo) ~patient:(p:t) : bool =
         begin match d.body_size, p.body_size with
         (* Perfect Matches *)
-        | Infant m1, Infant m2 -> crunch m1 m2
-        | Toddler m1, Toddler m2 -> crunch m1 m2
-        | Male_Child m1, Male_Child m2 -> crunch m1 m2
-        | Female_Child m1, Female_Child m2 -> crunch m1 m2
-        | Small_Female m1, Small_Female m2 -> crunch m1 m2
-        | Small_Male m1, Small_Male m2 -> crunch m1 m2
-        | Average_Male m1, Average_Male m2 -> crunch m1 m2
-        | Average_Female m1, Average_Female m2 -> crunch m1 m2
-        | Large_Male m1, Large_Male m2 -> crunch m1 m2
-        | Large_Female m1, Large_Female m2 -> crunch m1 m2
+        | BodySize.Infant m1, BodySize.Infant m2 -> crunch m1 m2
+        | BodySize.Toddler m1, BodySize.Toddler m2 -> crunch m1 m2
+        | BodySize.Male_Child m1, BodySize.Male_Child m2 -> crunch m1 m2
+        | BodySize.Female_Child m1, BodySize.Female_Child m2 -> crunch m1 m2
+        | BodySize.Small_Female m1, BodySize.Small_Female m2 -> crunch m1 m2
+        | BodySize.Small_Male m1, BodySize.Small_Male m2 -> crunch m1 m2
+        | BodySize.Average_Male m1, BodySize.Average_Male m2 -> crunch m1 m2
+        | BodySize.Average_Female m1, BodySize.Average_Female m2 -> crunch m1 m2
+        | BodySize.Large_Male m1, BodySize.Large_Male m2 -> crunch m1 m2
+        | BodySize.Large_Female m1, BodySize.Large_Female m2 -> crunch m1 m2
 
         (* Suitable Matches *)
-        | Female_Child m1, Toddler m2 -> crunch m1 m2
-        | Toddler m1, Female_Child m2 -> crunch m1 m2
+        | BodySize.Female_Child m1, BodySize.Toddler m2 -> crunch m1 m2
+        | BodySize.Toddler m1, BodySize.Female_Child m2 -> crunch m1 m2
 
-        | Small_Female m1, Male_Child m2 -> crunch m1 m2
-        | Male_Child m1, Small_Female m2 -> crunch m1 m2
+        | BodySize.Small_Female m1, BodySize.Male_Child m2 -> crunch m1 m2
+        | BodySize.Male_Child m1, BodySize.Small_Female m2 -> crunch m1 m2
 
-        | Small_Male m1, Average_Female m2 -> crunch m1 m2
-        | Average_Female m1, Small_Male m2 -> crunch m1 m2
+        | BodySize.Small_Male m1, BodySize.Average_Female m2 -> crunch m1 m2
+        | BodySize.Average_Female m1, BodySize.Small_Male m2 -> crunch m1 m2
 
-        | Average_Male m1, Large_Female m2 -> crunch m1 m2
-        | Large_Female m1, Average_Male m2 -> crunch m1 m2
+        | BodySize.Average_Male m1, BodySize.Large_Female m2 -> crunch m1 m2
+        | BodySize.Large_Female m1, BodySize.Average_Male m2 -> crunch m1 m2
 
         (* Unsuitable Matches *)
         | _ -> false end
 
-    let is_comparably_smaller_body_type ~donor:(d:t) ~patient:(p:t) : bool =
+    let is_comparably_smaller_body_type ~donor:(d:donorinfo) ~patient:(p:t) : bool =
         begin match d.body_size, p.body_size with
         
         (* If patient is a minor *)
@@ -767,9 +787,9 @@ struct
 
         (* Not a match *)
         | _ -> false end
-
-    let get_abo_compatibility ~donor:(d:t) ~patient:(p:t) : abo_compatibility =
-        begin match d.blood_type, p.blood_type with
+    
+    let get_abo_compatibility ~donor:(d:blood_type) ~patient:(p:t) : abo_compatibility =
+        begin match d, p.blood_type with
         (* Good Matches: A_Pos Patient *)
         | A_Pos, A_Pos -> ABO_Identical A_Pos
         | A_Neg, A_Pos -> Minor_Mismatch (A_Neg, A_Pos)
@@ -839,7 +859,8 @@ module Transit = struct
         | CombinedPotential of capability list
         | Unknown
 
-    let expected_transit_capability = [VehicleTransport]
+    let expected_transit_capability = 
+        CombinedPotential [VehicleTransport; CommercialAirlineTransport]
 
     module Location = struct
 
@@ -1017,14 +1038,14 @@ module Transit = struct
 
     module TTL = struct 
     
-        let rec get = 
+        let rec get : organ_transplant_type -> Time.t = 
         function
-        | HeartTransplant _
-        | HeartAndLungsTransplant _
+        | HeartTransplant _ -> ShelfLife.heart
+        | HeartAndLungsTransplant (_,_) -> ShelfLife.heart
         | HeartGraft _ -> ShelfLife.heart
 
-        | BilateralLungTransplant _ 
-        | SingleLungTransplant _ -> ShelfLife.tissue
+        | BilateralLungTransplant _ -> ShelfLife.lungs
+        | SingleLungTransplant _ -> ShelfLife.lungs
         | LungGraft _ -> ShelfLife.lungs
         
         | LiverGraft _ -> ShelfLife.tissue
@@ -1068,12 +1089,12 @@ module Transit = struct
     end
 end
 
-module OrganTransplant(TYPE: OrganTransplantType) = 
+module OrganTransplant(TYPE: OrganTransplantType) =
 struct
     type t =
         {
         transplant_id: Uuidm.t;
-        donor : Human.t;
+        donor : Human.donorinfo;
         patient : Human.t;
         transit_capability: Transit.capability;
         car_transport_distance_ml: float;
@@ -1081,6 +1102,7 @@ struct
         estimated_travel_time: int;
         abo_compatibility: Human.abo_compatibility; 
         hla_crossmatch: Human.hla_crossmatch option;
+        status: status;
         illness_compatibility: illness_compatibility option;
         rules: rules;
         seeking: Human.organ_transplant_type; }
@@ -1098,146 +1120,146 @@ struct
         | PostSurgery
         | UltimateOutcome
 
-    let rec will_survive_travel ~time:(time:int) ?(organ = TYPE.transferring) : bool =
-        begin match organ with
+    let rec will_survive_travel ~time:(time:float) ?organ:(organ=TYPE.transferring) () : bool =
+        begin match (organ:Human.organ_transplant_type) with
         | HeartTransplant _ ->
             begin
             (* Seconds = Milliseconds x 1000 and time value is in milliseconds *)
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.heart
             then false
             else true end
         | HeartGraft _ ->
             begin
             (* Seconds = Milliseconds x 1000 and time value is in milliseconds *)
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.heart
             then false
             else true end
         | HeartAndLungsTransplant _ ->
             begin
             (* Seconds = Milliseconds x 1000 and time value is in milliseconds *)
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.heart
             then false
             else true end
         | LungGraft _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.lungs
             then false
             else true end
         | BilateralLungTransplant _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.lungs
             then false
             else true end
         | SingleLungTransplant _ -> 
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.lungs
             then false
             else true end
         | LiverTransplant _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.liver
             then false
             else true end
         | LiverGraft _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.liver
             then false
             else true end
         | SingleKidneyTransplant _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.kidney
             then false
             else true end
         | DualKidneyTransplant _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.kidney
             then false
             else true end
         | KidneyGraft _ -> 
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.kidney
             then false
             else true end
         | PancreasGraft _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.pancreas
             then false
             else true end
         | PancreasTransplant _ -> 
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.pancreas
             then false
             else true end
         | IntestinesTransplant _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.intestines
             then false
             else true end
         | BoneMarrowTransplant _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.intestines
             then false
             else true end
         | BoneMarrowGraft _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.intestines
             then false
             else true end
         | IntestinesGraft _ -> 
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.intestines
             then false
             else true end
         | TissueTransplant _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.tissue
             then false
             else true end
         | ManyTissueTransplants _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.tissue
             then false
             else true end
         | TissueGraft _ ->
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.tissue
             then false
             else true end
         | ManyTissueGrafts _ -> 
             begin
-            let travel_time = Time.from_seconds (time * 1000) in
+            let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.tissue
             then false
             else true end
         | ManyOrganTransplant organs -> begin
-            List.fold_left (fun acc o -> acc && (will_survive_travel ~time ~organ:o)) true organs
+            List.fold_left (fun acc o -> acc && (will_survive_travel ~time ~organ:o ())) true organs
         end
         | Grafts organs -> begin
-            List.fold_left (fun acc o -> acc && (will_survive_travel ~time ~organ:o)) true organs
+            List.fold_left (fun acc o -> acc && (will_survive_travel ~time ~organ:o ())) true organs
         end
     end
 
-    let is_ABO_partial_match ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
+    let is_ABO_partial_match ~donor:(d:Human.blood_type) ~patient:(p:Human.t) : bool =
         begin
         let compatibility = Human.get_abo_compatibility ~donor:d ~patient:p in 
         match compatibility with
@@ -1245,7 +1267,7 @@ struct
         | Minor_Mismatch _ -> true
         | Major_Mismatch _ -> false end
 
-    let is_ABO_identical ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
+    let is_ABO_identical ~donor:(d:Human.blood_type) ~patient:(p:Human.t) : bool =
         begin
         let compatibility = Human.get_abo_compatibility ~donor:d ~patient:p in
         match compatibility with
@@ -1253,23 +1275,60 @@ struct
         | Minor_Mismatch _ -> false
         | Major_Mismatch _ -> false end
 
-    let create ~donor:(d:Human.t)  ~patient:(p:Human.t) : t Lwt.t =
+    let rec has_correct_size ~donor:(d:Human.donorinfo) ~patient:(p:Human.t) ?organ:(organ=TYPE.transferring) () : bool =
+        let donor_body_size = d.body_size in
+        begin match organ with
+        | HeartAndLungsTransplant _ -> Human.is_comparable_body_type ~donor:d ~patient:p
+        | HeartTransplant _ -> Human.is_comparable_body_type ~donor:d ~patient:p
+        | BilateralLungTransplant _ -> Human.is_comparable_body_type ~donor:d ~patient:p
+        | SingleLungTransplant _ ->  Human.is_comparable_body_type ~donor:d ~patient:p
+
+        | PancreasTransplant _ -> Human.is_comparable_body_type ~donor:d ~patient:p
+        | DualKidneyTransplant _ -> Human.is_comparable_body_type ~donor:d ~patient:p
+        | SingleKidneyTransplant _ -> Human.is_comparable_body_type ~donor:d ~patient:p
+        | LiverTransplant _ -> Human.is_comparable_body_type ~donor:d ~patient:p
+
+        | IntestinesTransplant _ -> Human.is_comparably_smaller_body_type ~donor:d ~patient:p
+
+        | HeartGraft _ -> true
+        | LungGraft _ -> true
+        | LiverGraft _ -> true
+        | IntestinesGraft _ -> true
+        | PancreasGraft _ -> true
+        | KidneyGraft _ -> true
+        | BoneMarrowGraft _ -> true
+        (* This is probably overly simplistic, but may end up treating tissue as essentially 
+        non-processable in this system, since tissue logistics and fulfillment are completely 
+        separate from OPTN oversight. *)
+        | TissueTransplant _ -> true
+        | BoneMarrowTransplant _ -> true
+        | Grafts _ -> true
+        | TissueGraft _ -> true
+        | ManyTissueGrafts _ -> true
+        | ManyTissueTransplants _ -> true
+
+        | ManyOrganTransplant organs ->
+            List.fold_left (fun acc o -> acc && has_correct_size ~donor:d ~patient:p ~organ:o ()) true organs
+        end
+
+    let create ~donor:(d:Human.donorinfo)  ~patient:(p:Human.t) : t Lwt.t =
         let geo_response : (float * int) Lwt.t = 
-            GeoDistanceClient.get_distance (p.details.zipcode: string) (d.details.zipcode: string) 
+            GeoDistanceClient.get_distance (p.details.zipcode: string) (d.zipcode: string) 
         in
         begin Lwt.bind geo_response (fun (distance, time) ->
             Lwt.return {
                 transplant_id = Algorithm.gen_uuid();
                 donor = d;
                 patient = p;
-                transit_capability = List.hd Transit.expected_transit_capability;
+                transit_capability = Transit.expected_transit_capability;
                 car_transport_distance_ml = distance;
                 air_transport_distance_ml = distance;
                 estimated_travel_time = time;
-                abo_compatibility = Human.get_abo_compatibility ~donor:d ~patient:p;
+                abo_compatibility = Human.get_abo_compatibility ~donor:d.bloodtype ~patient:p;
                 hla_crossmatch = None;
                 illness_compatibility = None;
                 rules = [];
+                status = PreMatch;
                 seeking = TYPE.transferring; }) 
             end
 
@@ -1308,39 +1367,36 @@ end
 module type DonorType = 
     sig 
         val donortype : Human.donortype
-        val accepted : Human.organ_transplant_type list
-        val transferring : Human.organ_transplant_type
-        val waitlist_number : int32
+        val accepted_by_recipients : Human.organ_transplant_type list
+        val viable_organs : Human.organ_transplant_type list
         val id : Uuidm.t
-        val cases : Human.organ_transplant_type list
+        val current_cases : Human.organ_transplant_type list
     end
 
 module Donor (TYPE: DonorType) = struct 
 
     type version = string
 
-    type t = {
+    type t = 
+    {
         id: Uuidm.t;
-        cases: Human.organ_transplant_type list;
-        waitlist_number: int32;
+        current_cases: Human.organ_transplant_type list;
         donortype: Human.donortype;
-        accepted: Human.organ_transplant_type list; 
-        transferring : Human.organ_transplant_type
+        accepted_by_recipients: Human.organ_transplant_type list; 
+        viable_organs : Human.organ_transplant_type list;
     }
 
     let donortype = TYPE.donortype
-    let transferring = TYPE.transferring
-    let waitlist_number = Int32.minus_one
+    let transferring = TYPE.viable_organs
     let accepted : Human.organ_transplant_type list = []
     let cases : Human.organ_transplant_type list = []
 
     let get_details : t = {
         id = Algorithm.gen_uuid();
-        cases = cases;
-        waitlist_number = waitlist_number;
+        current_cases = cases;
         donortype = donortype;
-        accepted = accepted;
-        transferring = transferring;
+        accepted_by_recipients = accepted;
+        viable_organs = transferring;
     }
 
 end
@@ -1354,7 +1410,6 @@ module Matching = struct
     type t = {
         version : string;
         match_id : Uuidm.t;
-        match_ranking: int32;
         abo_compatibility : bool;
         crossmatch_hla_compatibility : bool;
         illness_compatibility : bool;
@@ -1365,161 +1420,65 @@ module Matching = struct
     }
 
     let create ~donor:(d:Human.donortype) ~patient:(p:Human.t) (o:Human.organ_transplant_type) : t Lwt.t =
-        let module Proposition = struct let transferring = o; end in
-        let module ProposedTransplant = OrganTransplant(Proposition) in
-        let module ProspectiveDonor = 
-        struct
+        let module TransplantOrgan = struct let transferring = o; end in
+        let module ProposedTransplant = OrganTransplant(TransplantOrgan) in
+        let module ProspectiveDonor =
+            struct
+                let version = Algorithm.version
+                let id = Algorithm.gen_uuid ()
+                let current_cases = [o]
+                let donortype = d
+                let accepted_by_recipients = [o]
+                let viable_organs = [o]
+            end in
+        let module RegisteredDonor = Donor(ProspectiveDonor) in
+        let module ProspectivePatient = 
+        struct 
+            let version = Algorithm.version
             let id = Algorithm.gen_uuid ()
-            let cases = [o]
-            let waitlist_number = Int32.minus_one (* TODO BUILD WAITLIST SERVICE *)
-            let donortype = d
-            let accepted = []
-            let transferring = []
+            let waitlist_number = Int32.minus_one
+            let clinical_details = p
+            let accepted = [o]
+            let seeking = o;
         end in
-        let module RegisteredDonor = Donor(ProspectiveDonor).get_details in
-        let transferring = TYPE.transferring
-    let waitlist_number = Int32.minus_one
-    let accepted : Human.organ_transplant_type list = []
-    let cases : Human.organ_transplant_type list = []
-        end in
-        ProspectiveDonor.
-
+        let module Recipient = Patient(ProspectivePatient) in
         match d with
-        | RegularDonor h ->         
-            let proposed_transplant = ProposedTransplant.create ~donor:h ~patient:p in
-            Lwt.bind proposed_transplant (fun (transplant:ProposedTransplant.t) -> 
-                match transplant with 
-                | {
-                    transplant_id = tracker;
-                    transit_capability = transit_capabilities;
-                    car_transport_distance_ml = car_distance_mls;
-                    air_transport_distance_ml = air_distance_mls;
-                    estimated_travel_time = travel_time;
-                    abo_compatibility = abo_compatibility;
-                    hla_crossmatch = hla_crossmatch;
-                    illness_compatibility = illness_compatibility;
-                    rules = rules; _ }  -> failwith ""
-
-                        (* let rules_to_add : string list = List.map (fun rule -> 
-                            let (rule_name, rule_version, _) = rule in
-                            Printf.sprintf "Rule %s:v(%s)" rule_name rule_version
-                        ) rules in
-                        (* let tags : (string, string) Hashtbl.t = 
-                            begin Hashtbl.create 100 
-                            |> fun (tbl: (string, string) Hashtbl.t) ->
-                                (* I could see us also ignoring rules, depending on the use case *)
-                                List.iter (fun k -> Hashtbl.add tbl k "APPLIED") rules_to_add;
-                                Hashtbl.add tbl "Tracking_ID" (Uuidm.to_string tracker : string);
-                                tbl end *)
-                        Lwt.return {
-                            version = Algorithm.version;
-                            match_id = Algorithm.gen_uuid();
-                            match_ranking = Int32.zero;
-                            abo_compatibility = ProposedTransplant.get_abo_compatibility transplant.abo_compatibility;
-                            crossmatch_hla_compatibility = hla_crossmatch;
-                            illness_compatibility = illness_compatibility;
-                            rule_compatibility = transplant.rule_compatibility;
-                            (* 
-                                TODO! HAVE THIS BE PARAMETERIZED BY TRANSIT CAPABILITES
-                                Right now it's assuming commercial airline in airmiles,
-                                because of recent regulation. Commercial airlines typically fly
-                                460 – 575 mph so I will assume 460mph worst case. We divide 
-                                the miles by this number to get hours.
-                             *)
-                            will_survive_travel = ProposedTransplant.will_survive_travel (air_distance_mls /. 460);
-                            correct_size = transplant.correct_size;
-                            tags = Hashtbl.create 100;
-                        } *)
-
-        | LivingDonor (h, _) -> 
-            let proposed_transplant = ProposedTransplant.create ~donor:h ~patient:p in
-            Lwt.bind proposed_transplant (fun transplant -> 
-                match transplant with 
-                | {
-                    transplant_id = tracker;
-                    transit_capability = transit_capabilities;
-                    car_transport_distance_ml = car_distance_mls;
-                    air_transport_distance_ml = air_distance_mls;
-                    estimated_travel_time = travel_time;
-                    abo_compatibility = abo_compatibility;
-                    hla_crossmatch = hla_crossmatch;
-                    illness_compatibility = illness_compatibility;
-                    rules = rules; _ }  -> failwith ""
-                        
-                        (* let rules_to_add : string list = List.map (fun rule -> 
-                            let (rule_name, rule_version, _) = rule in
-                            Printf.sprintf "Rule %s:v(%s)" rule_name rule_version
-                        ) rules in
-                        (* let tags : (string, string) Hashtbl.t = 
-                            begin Hashtbl.create 100 
-                            |> fun (tbl: (string, string) Hashtbl.t) ->
-                                (* I could see us also ignoring rules, depending on the use case *)
-                                List.iter (fun k -> Hashtbl.add tbl k "APPLIED") rules_to_add;
-                                Hashtbl.add tbl "Tracking_ID" (Uuidm.to_string tracker : string);
-                                tbl end *)
-                        Lwt.return {
-                            version = Algorithm.version;
-                            match_id = Algorithm.gen_uuid();
-                            match_ranking = Int32.zero;
-                            abo_compatibility = ProposedTransplant.get_abo_compatibility transplant.abo_compatibility;
-                            crossmatch_hla_compatibility = hla_crossmatch;
-                            illness_compatibility = illness_compatibility;
-                            rule_compatibility = transplant.rule_compatibility;
-                            (* 
-                                TODO! HAVE THIS BE PARAMETERIZED BY TRANSIT CAPABILITES
-                                Right now it's assuming commercial airline in airmiles,
-                                because of recent regulation. Commercial airlines typically fly
-                                460 – 575 mph so I will assume 460mph worst case. We divide 
-                                the miles by this number to get hours.
-                             *)
-                            will_survive_travel = ProposedTransplant.will_survive_travel (air_distance_mls /. 460);
-                            correct_size = transplant.correct_size;
-                            tags = Hashtbl.create 100;
-                        } *)
-        | NearDeathDonor h ->
-            let proposed_transplant = ProposedTransplant.create ~donor:h ~patient:p in
-            Lwt.bind proposed_transplant (fun transplant -> 
-                match transplant with 
-                | {
-                    transplant_id = tracker;
-                    transit_capability = transit_capabilities;
-                    car_transport_distance_ml = car_distance_mls;
-                    air_transport_distance_ml = air_distance_mls;
-                    estimated_travel_time = travel_time;
-                    abo_compatibility = abo_compatibility;
-                    hla_crossmatch = hla_crossmatch;
-                    illness_compatibility = illness_compatibility;
-                    rules = rules; _ }  -> failwith ""
-
-
-                        (* let rules_to_add : string list = List.map (fun rule -> 
-                            let (rule_name, rule_version, _) = rule in
-                            Printf.sprintf "Rule %s:v(%s)" rule_name rule_version
-                        ) rules in
-                        (* let tags : (string, string) Hashtbl.t = 
-                            begin Hashtbl.create 100 
-                            |> fun (tbl: (string, string) Hashtbl.t) ->
-                                (* I could see us also ignoring rules, depending on the use case *)
-                                List.iter (fun k -> Hashtbl.add tbl k "APPLIED") rules_to_add;
-                                Hashtbl.add tbl "Tracking_ID" (Uuidm.to_string tracker : string);
-                                tbl end *)
-                        Lwt.return {
-                            version = Algorithm.version;
-                            match_id = Algorithm.gen_uuid();
-                            match_ranking = Int32.zero;
-                            abo_compatibility = ProposedTransplant.get_abo_compatibility transplant.abo_compatibility;
-                            crossmatch_hla_compatibility = hla_crossmatch;
-                            illness_compatibility = illness_compatibility;
-                            rule_compatibility = transplant.rule_compatibility;
-                            (* 
-                                TODO! HAVE THIS BE PARAMETERIZED BY TRANSIT CAPABILITES
-                                Right now it's assuming commercial airline in airmiles,
-                                because of recent regulation. Commercial airlines typically fly
-                                460 – 575 mph so I will assume 460mph worst case. We divide 
-                                the miles by this number to get hours.
-                             *)
-                            will_survive_travel = ProposedTransplant.will_survive_travel (air_distance_mls /. 460);
-                            tags = Hashtbl.create 100;
-                        } *)
-
-
+        | RegularDonor (info:Human.donorinfo) ->
+            begin
+                let transplant = ProposedTransplant.create ~donor:info ~patient:p in
+                Lwt.bind transplant (fun t ->
+                match t with
+                | { abo_compatibility = abo_compatibility;
+                    illness_compatibility = _;
+                    air_transport_distance_ml = air_transport_distance_ml;
+                    _ } ->
+                let air_time = air_transport_distance_ml /. 460. in
+                Lwt.return {
+                    version = Algorithm.version;
+                    match_id = Algorithm.gen_uuid();
+                    abo_compatibility = 
+                        begin match abo_compatibility with
+                        | ABO_Identical _ -> true
+                        | _ -> false end;
+                    (*TODO: Implement calling API here *)
+                    crossmatch_hla_compatibility = true;
+                    (* TODO: Implement calling ICD-10 Service or filtering out 
+                    known ones depending on the case... *)
+                    illness_compatibility = true;
+                    rule_compatibility = true;
+                    (* 
+                        TODO! HAVE THIS BE PARAMETERIZED BY TRANSIT CAPABILITES
+                        Right now it's assuming commercial airline in airmiles,
+                        because of recent regulation. Commercial airlines typically fly
+                        460 – 575 mph so I will assume 460mph worst case. We divide 
+                        the miles by this number to get hours.
+                        *)
+                    will_survive_travel = ProposedTransplant.will_survive_travel ~time:(air_time) ();
+                    correct_size = ProposedTransplant.has_correct_size ~patient:p ~donor:info ();
+                    tags = Hashtbl.create 100;
+                })
+            end
+        | LivingDonor _ -> failwith (Printf.sprintf "Living Donor not yet implemented in %s" Algorithm.version)
+        | NearDeathDonor _ -> failwith (Printf.sprintf "Living Donor not yet implemented in %s" Algorithm.version)
+        
+end
