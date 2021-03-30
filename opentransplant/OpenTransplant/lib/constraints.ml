@@ -1,17 +1,396 @@
 open CalendarLib
-(* open Uuidm *)
+open Uuidm
 
-module Algorithm = struct 
+let (>>) f g = fun x -> g(f(x))
+
+module Algorithm = 
+struct 
 
     exception NotYetImplemented of string
 
     let version = "Alpha.0.0.1"
+    let gen_uuid () = v5 Uuidm.nil (Printf.sprintf "Algo v: %s" version)
+    let running_instance = gen_uuid();
 
 end
 
-<<<<<<< HEAD
-module Human = struct
-=======
+(** Question:
+        Should I accept parameters as CLI arguments to then pass to a functorized
+        version of Policy module? That way you could run different versions of the system
+        under separate Policy configurations? The API could technically serve multiple types
+        of policy configurations based on what the caller requests.
+ *)
+module Policy = 
+struct 
+
+    let version = Algorithm.version
+
+    (** Source: https://www.life-source.org/latest/how-are-organs-transported-for-transplant/ *)
+    type living_donor_requirements = 
+    {
+        full_medical_eval_passed : bool;
+        physical_examination_passed : bool;
+        psychosocial_examination_passed : bool;
+    }
+
+    type near_death_donor_requirements = 
+    {
+        donorfamily_approval: bool;
+        donor_provider_coordination: bool;
+    }
+
+    let reasonable_metric_delta_organ_height = 3.
+    let reasonable_metric_delta_organ_weight = 3.
+
+    module ShelfLife = 
+    struct 
+        (** Source: https://www.life-source.org/donation/types/ *)
+        let heart = Time.from_hours 6.
+
+        (** Source: https://www.life-source.org/donation/types/ *)
+        let lungs = heart
+
+        (** Source: https://www.life-source.org/donation/types/ *)
+        let liver = Time.from_hours 12.
+
+        (** Source: https://www.life-source.org/donation/types/ *)
+        let intestines = Time.from_hours 16.
+
+        (** Source: https://www.life-source.org/donation/types/ *)
+        let pancreas = Time.from_hours 18.
+
+        (** Source: https://www.life-source.org/donation/types/ *)
+        let kidney = Time.from_hours 36.
+
+        (*  
+            Note, Tissues last 5 years: 
+
+            Tissue donation differs from organ donation in several ways. 
+            First, there is no waiting list for most tissue transplants, 
+            and the tissues are available when someone needs them. Organs 
+            must be transplanted within hours of recovery; tissue donations 
+            can be packaged and kept for up to five years. Donated tissues can 
+            be used to help and heal people in several different and meaningful ways.
+
+            Source: https://www.life-source.org/donation/types/
+
+        *)
+        let tissue = Time.from_hours (8760. *. 5.)
+    end
+end
+
+open Cohttp_lwt_unix
+open Lwt.Infix
+open Yojson.Basic
+open Yojson.Basic.Util
+
+module Location = struct
+
+    type t = 
+    {
+        latitude : float;
+        longitude : float;
+        name : string;
+        zipcode : string;
+    }
+
+end
+
+(** TODO:
+    Replace with a reasonable solution for location data and not some random
+    hack like we have right now. Something like a Google Maps. *)
+module GeoLocationClient = struct
+
+    exception GeoLocationClientException of string
+    
+    (**
+        # EXAMPLE RESPONSE JSON:
+
+        [{
+        "place_id":237727585,
+        "licence":"Data © OpenStreetMap contributors, ODbL 1.0. https://osm.org/copyright",
+        "boundingbox":["28.860372062704","29.180372062704","-81.128973611378","-80.808973611378"],
+        "lat":"29.02037206270398",
+        "lon":"-80.96897361137782",
+        "display_name":"Volusia County, Florida, 32168, United States of America",
+        "place_rank":21,
+        "category":"place",
+        "type":"postcode",
+        "importance":0.33499999999999996,
+        "address":{
+            "county":"Volusia County",
+            "state":"Florida",
+            "postcode":"32168",
+            "country":"United States of America",
+            "country_code":"us"
+            }
+        }] 
+    *)
+
+    (** Parse Location.t from JSON response *)
+    let extract (json:string) : Location.t =
+        try begin
+            let name = 
+                from_string json
+                |> index 0
+                |> fun j -> [ j ]
+                |> filter_member "display_name"
+                |> filter_string
+                |> List.hd
+            in
+            let lat =
+                from_string json
+                |> index 0
+                |> fun j -> [ j ]
+                |> filter_member "lat"
+                |> filter_string
+                |> List.hd
+                |> float_of_string
+            in
+            let lon =
+                from_string json
+                |> index 0
+                |> fun j -> [ j ]
+                |> filter_member "lon"
+                |> filter_string
+                |> List.hd
+                |> float_of_string
+            in
+            let zipcode = 
+                from_string json
+                |> index 0
+                |> fun j -> [ j ]
+                |> filter_member "address"
+                |> filter_member "postcode"
+                |> filter_string
+                |> List.hd
+            in
+            {
+                name = name;
+                zipcode = zipcode;
+                latitude = lat;
+                longitude = lon;
+            }
+        end with _ -> raise @@ Yojson.Json_error json
+        
+    (** Construct URI for talking to open map data for location information over HTTPS *)
+    let get_open_map_url (zip:string) : Uri.t = 
+        Printf.sprintf "https://nominatim.openstreetmap.org/search?q=%s&format=jsonv2&addressdetails=1" zip
+        |> Uri.of_string
+
+    (** Make HTTP Request and return location data in promise value *)
+    let get_location_data (zipcode:string) : Location.t Lwt.t =
+            Client.get @@ get_open_map_url zipcode  
+            >>= fun (resp, body) ->
+            match resp.status with
+            | `OK ->
+                begin
+                    try begin
+                    body |> Cohttp_lwt.Body.to_string >|= fun str_body ->
+                        extract str_body
+                    end with _ -> raise @@ GeoLocationClientException zipcode
+                end
+            | _ -> raise @@ GeoLocationClientException zipcode
+
+end
+
+module GeoDistanceClient = struct
+
+    exception GeoDistanceClientException of Location.t * Location.t
+
+    (** Construct URI for talking to a to b open map tool over HTTPS *)
+    let get_distance_via_map_tool_url (local1:Location.t) (local2:Location.t) : Uri.t =
+        Printf.sprintf 
+            "https://www.freemaptools.com/ajax/route-service.php?lat1=%s&lng1=%s&lat2=%s&lng2=%s"
+            (string_of_float local1.latitude)
+            (string_of_float local1.longitude)
+            (string_of_float local2.latitude)
+            (string_of_float local2.longitude)
+        |> Uri.of_string
+
+    (* 
+        { 
+            "hints" : { 
+                "visited_nodes.sum" : 893,
+                "visited_nodes.average": 893.0 
+            },
+            "info": {
+                "copyrights":["GraphHopper", "OpenStreetMap contributors"],
+                "took":16
+            },
+            "paths":[
+                {
+                    "distance": 1293834.883,
+                    "weight": 64697.72454,
+                    "time":45289555,
+                    "transfers":0,
+                    "points_encoded":true,
+                    "bbox":[-81.686619,29.011285, -77.100354,38.838456]
+                }
+            ]
+        }
+    *)
+
+    (** Parse distance value from JSON response *)
+    let extract (json:string) =
+        ([ from_string json ]
+        |> filter_member "paths"
+        |> filter_member "distance"
+        |> filter_string
+        |> List.hd
+        |> float_of_string,
+        [ from_string json ]
+        |> filter_member "paths"
+        |> filter_member "time"
+        |> filter_string
+        |> List.hd
+        |> int_of_string)
+
+
+    (** Make HTTP Request and return distance (float) result in miles & time (int) in promise value *)
+    let get_distance (zip1:string) (zip2:string) : (float * int) Lwt.t =
+        let location1 = GeoLocationClient.get_location_data zip1 in
+        let location2 = GeoLocationClient.get_location_data zip2 in
+        let locations = Lwt.both location1 location2 in
+        Lwt.bind locations (fun (local1, local2) -> 
+            let url = get_distance_via_map_tool_url local1 local2 in
+            Client.get url >>= fun (resp, body) ->
+            match resp.status with
+            | `OK ->
+                begin 
+                    try begin 
+                        body |> Cohttp_lwt.Body.to_string >|= fun str_body ->
+                            extract str_body
+                    end with _ -> raise @@ GeoDistanceClientException (local1, local2)
+                end
+            | _ -> raise @@ GeoDistanceClientException (local1, local2))
+
+end
+
+module Organ = struct
+    
+    let version = Algorithm.version
+
+    module Sidedness = struct 
+    
+        type t = Right | Left 
+
+        let to_string =
+            function
+            | Left -> "Left"
+            | Right -> "Right"
+        
+        let of_string s =
+            match s with
+            | s when String.equal (String.lowercase_ascii s) "left" -> Left
+            | s when String.equal (String.lowercase_ascii s) "right" -> Right
+            | _ -> failwith @@ Printf.sprintf "Could not match string %s with either Left or Right" s
+
+    end
+
+    type cold_time = float ref
+    type warm_time = float ref
+
+    type organ_details = 
+    {
+        cold_time : cold_time;
+        warm_time : warm_time;
+        tracking_id : Uuidm.t;
+        medical_notes: string;
+        organ_type: t;
+        sidedness: Sidedness.t option;
+    }
+
+    (** 
+        
+        GADT type to represent the various degrees of tissues and organs 
+        TODO: Fill out all the actual fields required for each organ during organ intake.
+    *)        
+    type _ t = 
+    | Heart : string -> organ_details t
+    | Lung : Sidedness.t * string -> organ_details t
+    | Liver : string -> organ_details t
+    | Kidney : Sidedness.t * string -> organ_details t
+    | Pancreas : string -> organ_details t
+    | Intestines : string -> organ_details t
+    | BoneMarrow : string -> organ_details t
+    | Bone : string -> organ_details t
+    | Tendon : string -> organ_details t
+    | VeinsOrArteries : string -> organ_details t
+    | HeartValves : string -> organ_details t
+    | Corneas : (Sidedness.t * string) -> organ_details t
+    | Graft : string -> organ_details t
+        
+    let to_string =
+    function
+    | Heart _ -> "Heart"
+    | Lung (Right, _) -> "Right Lung"
+    | Lung (Left, _) -> "Left Lung"
+    | Liver _ -> "Liver"
+    | Kidney (Left, _) -> "Left Kidney"
+    | Kidney (Right, _) -> "Right Kidney"
+    | Pancreas _ -> "Pancreas"
+    | Intestines _ -> "Intestines"
+    | BoneMarrow _ -> "Bone Marrow"
+    | Bone medical_notes -> Printf.sprintf "Bone: %s" medical_notes
+    | Tendon medical_notes -> Printf.sprintf "Tendon: %s" medical_notes
+    | VeinsOrArteries medical_notes -> Printf.sprintf "Veins or Arteries: %s" medical_notes
+    | HeartValves medical_notess -> Printf.sprintf "Heart Valves: %s" medical_notess
+    | Corneas (sidedness, medical_notess) -> Printf.sprintf "Corneas: %s on side %s" medical_notess (Sidedness.to_string sidedness)
+    | Graft description -> Printf.sprintf "Graft: %s" description
+
+    (** TODO: we could theoretically have these be 
+    numerical codes as they are not many and will never grow. In the future
+    there will be way more inputs and a smaller record type `heart`, `lung`, etc
+    with special fields for each that are passed as well to the Heart() constructor.
+     *)
+     let of_string =
+        function
+        (* Whole Organs *)
+        | "Heart" -> Heart Algorithm.version
+        | "Right Lung" -> Lung (Right, Algorithm.version)
+        | "Left Lung" -> Lung (Left, Algorithm.version)
+        | "Liver" -> Liver Algorithm.version
+        | "Right Kidney" -> Kidney (Right, Algorithm.version)
+        | "Left Kidney" -> Kidney (Left, Algorithm.version)
+        | "Pancreas" -> Pancreas Algorithm.version
+        | "Intestines" -> Intestines Algorithm.version
+        | "Bone Marrow" -> BoneMarrow Algorithm.version
+
+        (** Tissue Types *)
+        | s when 
+            String.sub s 0 4 
+            |> fun str -> String.lowercase_ascii str 
+            |> String.equal "bone" 
+            -> Bone(s)
+        | s when 
+            String.sub s 0 4
+            |> fun str -> String.lowercase_ascii str
+            |> String.equal "tendon"
+            -> Tendon(s)
+
+        | s when 
+            String.sub s 0 4
+            |> fun str -> String.lowercase_ascii str
+            |> String.equal "veinsorarteries"
+            -> VeinsOrArteries(s)
+
+        | s when 
+            String.sub s 0 4
+            |> fun str -> String.lowercase_ascii str
+            |> String.equal "heartvalves"
+            -> HeartValves(s)
+
+        | s when
+            String.sub s 0 4
+            |> fun str -> String.lowercase_ascii str
+            |> String.equal "corneas"
+            -> Corneas(Left, s)
+
+        | err -> failwith ("Not a valid string representation of organ:" ^ err)
+
+end
+
 module Human = 
 struct
 
@@ -121,30 +500,33 @@ struct
         | Sids 
         | Stabbed
         | Other of string
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
 
-    type version = float
+    end
 
     type t =
     {
-        details: details option;
+        details: details;
         blood_type: blood_type;
         body_size: BodySize.t;
         hla_class_I: hla_class_I;
         hla_class_II: hla_class_II;
         (* Dictionary: Key:ICD10_CODE, Value:TEST_RESULT *)
-        icd_10_codes: (disease, bool option) Hashtbl.t
+        icd_10_codes: (disease, bool option) Hashtbl.t;
+        birthdate: Date.t;
+        waitlist_start: Date.t;
+        availability: availability;
     }
 
     and details = 
     {
-
-        name : string;
+        pronouns: string;
+        preferred_name: string;
+        firstname : string;
+        middlename: string;
+        lastname: string;
         email: string;
         primary_phone: string;
-        birthdate: Date.t;
-        waitlist_start: Date.t;
-        availability: availability;
+        zipcode: string;
 
     }
     
@@ -158,27 +540,8 @@ struct
         | O_Pos
         | O_Neg
 
-    (**  This is a hypothetical, might be 
-        best suited to be bands of kg *)
-    and body_size =
-        | Infant
-        | Toddler
-        | Child
-        | Small_Female
-        | Small_Male
-        | Average_Female
-        | Average_Male
-        | Large_Female
-        | Large_Male
-
-    and zipcode = string
-
     (* TODO: ICD_10_CODE MAPPING *)
     and disease = string
-
-    and meldscore = int 
-
-    and peldscore = string
 
     and availability = 
         | Can_Be_Contacted_and_Transplant_Ready
@@ -186,21 +549,9 @@ struct
         | Can_NOT_Be_Contacted_and_Transplant_Ready
         | Can_NOT_Be_Contacted_and_NOT_Transplant_Ready
 
-    and entrytime = Date.t
-
     and hla_class_I = string
     and hla_class_II = string
 
-<<<<<<< HEAD
-    (* TODO: Research severity grades and how they differ between prognoses *)
-    and status =
-        | Dying
-        | Critical
-        | Stable
-        | Nominal
-
-    let has_disease (patient:t) (disease:disease) : bool = begin
-=======
     and abo_compatibility =
         | ABO_Identical of blood_type
         | Minor_Mismatch of blood_type * blood_type
@@ -215,7 +566,6 @@ struct
         | AwaitingTest
 
     let has_disease (patient:t) (disease:string) : bool = begin
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
         let { icd_10_codes = tags; _ } = patient in
         if Hashtbl.mem tags disease
         then
@@ -243,10 +593,6 @@ struct
     let is_EBV_negative (p:t) = not (has_disease p "B27.9")
     let is_COVID_19_negative (p:t) = not (has_disease p "U07.1")
 
-<<<<<<< HEAD
-
-end
-=======
     type donorinfo = {
         bloodtype: blood_type;
         hla_information: hla_crossmatch;
@@ -297,56 +643,24 @@ end
         | ManyTissueTransplants of donortype Organ.t list
         | TissueGraft of donortype Organ.t
         | ManyTissueGrafts of donortype Organ.t list
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
 
-module Organ = struct
-    
-    type version = float
-
-    type t = 
-        | Heart 
-        | Lung of sidededness
-        | Liver 
-        | Kidney of sidededness
-        | Pancreas
-        | Intestines
-
-    and sidededness = Right | Left
-    
-    let to_string : (t -> string) =
+        
+    let is_available : t -> bool =
         function
-        | Heart -> "Heart"
-        | Lung (Right) -> "Right Lung"
-        | Lung (Left) -> "Left Lung"
-        | Liver -> "Liver"
-        | Kidney (Left) -> "Left Kidney"
-        | Kidney (Right) -> "Right Kidney"
-        | Pancreas -> "Pancreas"
-        | Intestines -> "Intestines"
-    
-    let of_string : (string -> t) =
+        | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
+        | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
+        | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> false
+        | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
+
+    let is_available_by_phone : t -> bool =
         function
-<<<<<<< HEAD
-        | "Heart" -> Heart
-        | "Right Lung" -> Lung (Right)
-        | "Left Lung" -> Lung (Left)
-        | "Liver" -> Liver
-        | "Right Kidney" -> Kidney (Right)
-        | "Left Kidney" -> Kidney (Left)
-        | "Pancreas" -> Pancreas
-        | "Intestines" -> Intestines 
-        | _ -> failwith "Not a valid string representation of organ"
+        | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
+        | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> true
+        | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> false
+        | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
 
-end
-
-type donortype = LivingDonor of Human.t * Organ.t | RegularDonor of Organ.t
-
-module type OrganTransplantType = sig val body_part : Organ.t end
-
-module type DonorType = sig val donortype : donortype end
-
-module Donor (DT: DonorType) = struct  
-=======
+    let is_transplant_ready : t -> bool = 
+        function
         | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
         | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
         | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> true
@@ -429,154 +743,53 @@ module Donor (DT: DonorType) = struct
 
         | BodySize.Average_Male m1, BodySize.Large_Female m2 -> crunch m1 m2
         | BodySize.Large_Female m1, BodySize.Average_Male m2 -> crunch m1 m2
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
 
-    type version = float
-
-    type t = Human.t * Organ.t 
-
-    let get_organ =
-        match DT.donortype with
-        | LivingDonor (_, o) -> o
-        | RegularDonor (o) -> o
-
-end 
-
-module OrganTransplant (O: OrganTransplantType) = struct
-
-    type t =
-    {
-        travel_time : int;
-        donor : t;
-        patient : t;
-        car_transport_distance_ml: float;
-        air_transport_distance_ml: float;
-        compatibility: abo_compatibility * hla_crossmatch option
-    }
-
-    and abo_compatibility =
-        | ABO_Identical of Human.blood_type
-        | Minor_Mismatch of Human.blood_type * Human.blood_type
-        | Major_Mismatch of Human.blood_type * Human.blood_type
-
-    and hla_crossmatch =
-        | NegativeCrossmatch of 
-            (Human.hla_class_I * Human.hla_class_I) * (Human.hla_class_II * Human.hla_class_II)
-        | PositiveCrossmatch of 
-            (Human.hla_class_I * Human.hla_class_I) * (Human.hla_class_II * Human.hla_class_II)
-        | Untested
-        | AwaitingTest
-
-    let is_available : Human.t -> bool =
-        function
-        | { details = Some details; _} -> 
-            begin match details with
-            | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
-            | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
-            | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> false
-            | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false end
-        | _ -> false
-
-    let is_available_by_phone : Human.t -> bool =
-        function
-        | { details = Some details; _} -> 
-            begin match details with
-            | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
-            | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> true
-            | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> false
-            | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false end
-        | _ -> false
-
-    let is_transplant_ready : Human.t -> bool = 
-         function
-        | { details = Some details; _} -> 
-            begin match details with
-            | { availability = Can_Be_Contacted_and_Transplant_Ready; _ } -> true
-            | { availability = Can_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false
-            | { availability = Can_NOT_Be_Contacted_and_Transplant_Ready; _ } -> true
-            | { availability = Can_NOT_Be_Contacted_and_NOT_Transplant_Ready; _ } -> false end
-        | _ -> false
-    (**
-        UX Research Required: How do Surgeons and OPOs in the field
-        need to categorize organ size in such a way that the volumetric
-        proportions are known sufficiently for the algorithm's suggestions, 
-        but loose enough to not exclude important "less than ideal" matches
-        that could also surface and be useful?
-     *)
-    let is_comparable_body_type ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
-        begin match d.body_size, p.body_size with
-        (* Perfect Matches *)
-        | Infant, Infant -> true
-        | Toddler, Toddler -> true
-        | Child, Child -> true
-        | Small_Female, Small_Female -> true
-        | Small_Male, Small_Male -> true
-        | Average_Male, Average_Male -> true
-        | Average_Female, Average_Female -> true
-        | Large_Male, Large_Male -> true
-        | Large_Female,Large_Female -> true
-        (* Suitable Matches *)
-        | Small_Female, Child -> true
-        | Child, Small_Female -> true
-        | Small_Male, Average_Female -> true
-        | Average_Female, Small_Male -> true
-        | Average_Male, Large_Female -> true
-        | Large_Female, Average_Male -> true
         (* Unsuitable Matches *)
         | _ -> false end
 
-<<<<<<< HEAD
-
-
-    let is_comparably_smaller_body_type ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
-=======
     let is_comparably_smaller_body_type ~donor:(d:donorinfo) ~patient:(p:t) : bool =
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
         begin match d.body_size, p.body_size with
         
         (* If patient is a minor *)
-        | Infant, Child -> true
-        | Child, Toddler -> true
-        | Toddler, Child -> true
+        | Infant m1, Toddler m2 -> crunchSmallerFit m1 m2
+        | Female_Child m1, Toddler m2 -> crunchSmallerFit m1 m2
+        | Toddler m1, Female_Child m2-> crunchSmallerFit m1 m2
 
         (* If patient is a small woman *)
-        | Child, Small_Female -> true
+        | Male_Child m1, Small_Female m2 -> crunchSmallerFit m1 m2
+        | Female_Child m1, Small_Female m2 -> crunchSmallerFit m1 m2
 
         (* If patient is a small man *)
-        | Small_Female, Small_Male -> true
-        | Child, Small_Male -> true
+        | Small_Female m1, Small_Male m2 -> crunchSmallerFit m1 m2
+        | Male_Child m1, Small_Male m2 -> crunchSmallerFit m1 m2
+        | Female_Child m1, Small_Male m2 -> crunchSmallerFit m1 m2
 
         (* If patient is a average woman *)
-        | Small_Male, Average_Female -> true
-        | Small_Female, Average_Female -> true
-        | Child, Average_Female -> true
+        | Small_Male m1, Average_Female m2 -> crunchSmallerFit m1 m2
+        | Small_Female m1, Average_Female m2 -> crunchSmallerFit m1 m2
+        | Male_Child m1, Average_Female m2 -> crunchSmallerFit m1 m2
+        | Female_Child m1, Average_Female m2 -> crunchSmallerFit m1 m2
 
         (* If patient is a average man *)
-        | Average_Female, Average_Male -> true
-        | Small_Male, Average_Male -> true
-        | Small_Female, Average_Male -> true
+        | Average_Female m1, Average_Male m2 -> crunchSmallerFit m1 m2
+        | Small_Male m1, Average_Male m2 -> crunchSmallerFit m1 m2
+        | Small_Female m1, Average_Male m2 -> crunchSmallerFit m1 m2
 
         (* If patient is a large woman *)
-        | Average_Male, Large_Female -> true
-        | Average_Female, Large_Female -> true
-        | Small_Male, Large_Female -> true
+        | Average_Male m1, Large_Female m2 -> crunchSmallerFit m1 m2
+        | Average_Female m1, Large_Female m2 -> crunchSmallerFit m1 m2
+        | Small_Male m1, Large_Female m2 -> crunchSmallerFit m1 m2
 
         (* If patient is a large man *)
-        | Average_Female, Large_Male -> true
-        | Average_Male, Large_Male -> true
-        | Large_Female, Large_Male -> true
+        | Average_Female m1, Large_Male m2 -> crunchSmallerFit m1 m2
+        | Average_Male m1, Large_Male m2 -> crunchSmallerFit m1 m2
+        | Large_Female m1, Large_Male m2 -> crunchSmallerFit m1 m2
 
         (* Not a match *)
         | _ -> false end
-<<<<<<< HEAD
-
-    let get_abo_compatibility ~donor:(d:Human.t) ~patient:(p:Human.t) : abo_compatibility =
-        begin match d.blood_type, p.blood_type with
-=======
     
     let get_abo_compatibility ~donor:(d:blood_type) ~patient:(p:t) : abo_compatibility =
         begin match d, p.blood_type with
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
         (* Good Matches: A_Pos Patient *)
         | A_Pos, A_Pos -> ABO_Identical A_Pos
         | A_Neg, A_Pos -> Minor_Mismatch (A_Neg, A_Pos)
@@ -617,32 +830,6 @@ module OrganTransplant (O: OrganTransplantType) = struct
         (* Bad Matches *)
         | _ as donor, patient -> Major_Mismatch (donor, patient) end
 
-<<<<<<< HEAD
-    let will_survive_travel ~travel_time:(time:int) : bool =
-        (* 
-            Need to convert distance in miles to 
-            hours away in terms of transport. 
-
-            There are many assumptions that have to be made
-            here that merit thought and contemplation. 
-
-            For one, what is the method of transport? 
-                - Helicopter?
-                - Automobile transit? 
-                - 3rd Party Fulfilfment? 
-                - Do certain organs have consistent providers? 
-                - Could we know more about exact transport 
-                time depending on provider type? 
-
-         *)
-        match O.body_part with
-        | Heart | Lung _ -> begin
-            (* Seconds = Milliseconds x 1000 and time value is in milliseconds *)
-            let travel_time = Time.from_seconds (time * 1000) in
-            (* Max shelf life on hearts & lungs is 4-6 hours *)
-            let shelf_life = Time.from_hours 6.0 in
-            if travel_time >= shelf_life
-=======
 end
 
 module type OrganTransplantType = sig val transferring : Human.organ_transplant_type end
@@ -940,74 +1127,18 @@ struct
             (* Seconds = Milliseconds x 1000 and time value is in milliseconds *)
             let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.heart
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
             then false
             else true end
-        | Liver | Kidney _ | Pancreas -> begin
+        | HeartGraft _ ->
+            begin
             (* Seconds = Milliseconds x 1000 and time value is in milliseconds *)
-<<<<<<< HEAD
-            let travel_time = Time.from_seconds (time * 1000) in
-            (* Max shelf life on hearts & lungs is 4-6 hours *)
-            let shelf_life = Time.from_hours 15.0 in
-            if travel_time >= shelf_life
-=======
             let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.heart
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
             then false
             else true end
-        | Intestines -> begin
+        | HeartAndLungsTransplant _ ->
+            begin
             (* Seconds = Milliseconds x 1000 and time value is in milliseconds *)
-<<<<<<< HEAD
-            let travel_time = Time.from_seconds (time * 1000) in
-            (* Max shelf life on hearts & lungs is 4-6 hours *)
-            let shelf_life = Time.from_hours 24.0 in
-            if travel_time >= shelf_life
-            then false
-            else true end
-
-    let is_baseline_good_match ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
-        begin is_available d && 
-            is_transplant_ready d &&
-            (* will_survive_travel travel_time && *)
-            begin get_abo_compatibility ~donor:d ~patient:p 
-                |> function
-                | ABO_Identical _ -> true
-                | Minor_Mismatch _ -> true
-                | Major_Mismatch _ -> false end end
-
-    let is_ABO_identical ~donor:(d:Human.t) ~patient:(p:Human.t) : bool =
-            begin get_abo_compatibility ~donor:d ~patient:p 
-                |> function
-                | ABO_Identical _ -> true
-                | Minor_Mismatch _ -> false
-                | Major_Mismatch _ -> false end
-
-    (* let makeMatch ~patient(p:Patient.t) ~donor(d:Donor.t) ~tracking:(uuid:Uuidm.t) = *)
-        (* match O.body_part with *)
-        (*
-            Hemodynamic assessment results:
-                 Functional status or exercise testing results
-                 Heart failure severity or end organ function indicators
-                 Heart failure therapies
-                 Mechanical support
-                 Sensitization risk, including CPRA, peak PRA, and number of prior sternotomies
-                 Current diagnosis
-         *)
-
-        (* | Heart -> () *)
-            (* match (d:Donor.t), (p:Patient.t) with
-            | (LivingDonor ((human:Human.t), (request:OrganTransplantType))) , p ->
-                let _match = ({}:OrganTransplant.match) in
-                { 
-                    version = Algorithm.version;
-                    match = _match; }
-            | (RegularDonor dt), p ->  *)
-        (* | Liver -> ()
-        | Pancreas -> ()
-        | 
-              *)
-=======
             let travel_time = Time.from_seconds (time *. 1000. |> int_of_float) in
             if travel_time >= Policy.ShelfLife.heart
             then false
@@ -1201,29 +1332,20 @@ struct
                 seeking = TYPE.transferring; }) 
             end
 
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
 end
 
+module type PatientType =
+    sig 
+        val seeking : Human.organ_transplant_type 
+        val accepted : Human.organ_transplant_type list
+        val waitlist_number : int32
+        val id : Uuidm.t
+        val clinical_details : Human.t
+    end
+module Patient(INFO:PatientType) = struct 
 
-<<<<<<< HEAD
-module Match = struct 
+        type version = float
 
-    type t = {
-        version : float;
-        abo_compatibility : float;
-        crossmatch_hla : bool;
-        will_survive_travel : bool;
-        correct_size : bool;
-        tags: (string * string) Hashtbl.t;
-    }
-
-    and match_result = {
-        organ : Organ.t;
-        tracking : Uuidm.t;
-        donor: Donor.t;
-        patient: Patient.t;
-        result: t;
-=======
         type seeking = Human.organ_transplant_type list
 
         let seeking = INFO.seeking
@@ -1275,30 +1397,14 @@ module Donor (TYPE: DonorType) = struct
         donortype = donortype;
         accepted_by_recipients = accepted;
         viable_organs = transferring;
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
     }
 
-    let makeRegularMatch ~patient:(p:Patient.t) ~donor(d:Donor.t) ~organ(o:Organ.t) =
-        match d.get_organ with 
-        | o -> 
-
-<<<<<<< HEAD
 end
 
-(*
-module Transplants = struct 
-*)
-(*     
-    module Heart : OrganTransplantType = struct
-        include OrganTransplant;
+module Matching = struct 
 
-        let body_part = 
-            let uuid = v5 Heart (Printf.sprintf "Heart Transplant: Algo V %s" Algorithm.version)
-            Organ.create
+    type version = string
 
-    end *)
-(* end *)
-=======
     let version = Algorithm.version;
 
     type t = {
@@ -1376,4 +1482,3 @@ module Transplants = struct
         | NearDeathDonor _ -> failwith (Printf.sprintf "Living Donor not yet implemented in %s" Algorithm.version)
         
 end
->>>>>>> eec328f... updated constraints for more accurate donor & patient types - interface does not match right now so build is broken
