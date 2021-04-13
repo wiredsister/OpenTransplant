@@ -1,11 +1,5 @@
 
-(**
-    If you wanted to _actually_ roll this out in the United States, 
-    even though today (12:17hrs 1/16/2021 as I'm writing now) it is still 
-    illegal based on statutes surrounding OPTN to run this type of application
-    in production... one would need to codify OPOs and then write a piece of code
-    to map their zipcodes to these facilities. Today, it is very messily done.
-    
+(** 
     https://www.organdonor.gov/awareness/organizations/local-opo.html
  *)
 module OPO = struct 
