@@ -22,18 +22,26 @@ Special thanks to: [@ns222](https://github.com/ns222)
 
 We believe every country and community, regardless of wealth or ability, should be able to operate an organ transplant network for its citizens. We believe this organ transplant network should be safe, auditable, free of fraud, waste, and abuse; we believe this system should benefit life and reduce death. 
 
+While this system will only ever exist as a reference implementation for United States policy, it will feature experimental algorithms to test alongside core functionality covered under public policy of the OPTN. Based upon statue the only organization in the United States that can run the Organ Network is UNOS, so this project remains hypothetical until further notice. 
+
 ### Key Features & Road Map:
 - organ decay is reduced
 - patient outcomes are optimized for
-- underserved populations and communities of color are measured against population for equity (TODO: think about how we can convey importance of data analytics and preventatitve warnings to policy makers)
+- underserved populations and communities of color are measured against population for equity
 - the system can measure end to end actions and the implications of policy changes quickly and easily
-- the system should be near real-time with zero downtime
+- the system should be near real-time with zero downtime (equivalent to a 911 system or telecom)
 - the system should not require paper or human intervention
 - the system will be modern and incorporate medical research (HLA crossmatching, organ sizing innovations, modern logistics & tracking)
+- the system will have a modern user interface and user experience which incorporates the human perspectives of surgeons, patients, organ procurement organizations, and transplant coordinators
+- the algorithms are versioned and tested via CI/CD
+- the system integrates with tools surgeons and coordinators already use
+- the system incorporates scheduling and waitlist management seamlessly and orthoganlly to the matching logic
+- the system provides a cold storage for patient outcomes to be updated and long term analysis
+- the system will have an easy HIPAA compliant communication solution centered around an organ
 
 ### Sources & Thanks
 
-This entire application was designed and built using publically available information from OPTN, UNOs, and HRSA found via Google as well as numerous medical papers from scholarly journals. See PAPERS.md (TODO: must add citations & PAPER.md file for medical lit.) for details.
+This entire application was designed and built using publically available information from OPTN, UNOs, and HRSA found via Google as well as numerous medical papers from scholarly journals.
 
 ### Architecture Diagram
 
@@ -47,14 +55,16 @@ This entire application was designed and built using publically available inform
 
 ### Tech Road Map
 
-1. Webapp for OPOs
-2. Webapp for Patient
-3. EHR FHIR API integration for EPIC & Cerner
-4. Gherkin & Cucumber Scenario tests for each organ & user health
+1. Webapp for Organ Tracking
+2. Webapp for Organ Referral
+3. Webapp for Patient account creation
+4. Webapp for Surgeon Organ Offer
+6. EHR FHIR API integration for EPIC & Cerner
+7. Gherkin & Cucumber Scenario tests for each organ & user health
 
 ### Out of Box Functionality: 
 
-Currently, the code base combines a lot of new, novel ideas, but these will soon be refactored into an experimental (Living Donors being combined with Deceased Donors donations, etc) module inside of Policy. There is also experimental support for tissue types beyond OPTN policy reference, but out of box support will not include these. This implementation is merely a possibile reference implenetation for public OPTN algorithms for waitlist and matching. 
+Currently, the code base combines a lot of novel ideas, but these will soon be refactored into an experimental (Living Donors being combined with Deceased Donors donations, etc) module inside of Policy. There is also experimental support for tissue types beyond OPTN policy reference, but out of box support will not include these. This implementation is merely a possibile reference implenetation for public OPTN algorithms for waitlist and matching. 
 
 ## Build & Run
 
