@@ -11,13 +11,16 @@ Reference implementation only; not intended for use in any pilot or production s
 [@wiredsister](https://github.com/wiredsister), Government Professional Account: [@ginabeena](https://github.com/ginabeena)
 
 ### Authors
-[@yanlow](https://github.com/yanlow), [@wiredsister](https://github.com/wiredsister)
+
+Devops: [@yanlow](https://github.com/yanlow) 
+Algorithms & Backend: [@wiredsister](https://github.com/wiredsister)
+Product: [@MeredithStewart](https://github.com/MeredithStewart)
+
+Special thanks to: [@ns222](https://github.com/ns222)
 
 ### Project Ethos
 
 We believe every country and community, regardless of wealth or ability, should be able to operate an organ transplant network for its citizens. We believe this organ transplant network should be safe, auditable, free of fraud, waste, and abuse; we believe this system should benefit life and reduce death. 
-
-<< TODO: @meredithstewart needs to add some edits >>
 
 ### Key Features & Road Map:
 - organ decay is reduced
@@ -36,6 +39,8 @@ This entire application was designed and built using publically available inform
 
 ![Image of Tentative Organ Transplant Architecture](https://user-images.githubusercontent.com/3818802/103159093-38953800-4793-11eb-87c7-090c816c9cc9.jpg)
 
+![Image of Idealized User Flow in Reference Prototype](https://user-images.githubusercontent.com/3818802/118364158-44786f80-b565-11eb-9b10-3f56e79d6d92.png)
+
 - Web API Layer: Elixir Phoenix Web API Stack
 - FrontEnd: Node.js, SCSS styling
 - Backend Matching & Scheduling: OCaml services
@@ -47,46 +52,9 @@ This entire application was designed and built using publically available inform
 3. EHR FHIR API integration for EPIC & Cerner
 4. Gherkin & Cucumber Scenario tests for each organ & user health
 
-### Supported Organ Donation & Donor Types Out of Box: 
+### Out of Box Functionality: 
 
-```ocaml
-
-type donortype = 
-    | LivingDonor of Human.t * Policy.living_donor_requirements
-    | RegularDonor of Human.t
-    | NearDeathDonor of Human.t
-
-type organ_transplant_type =
-    (* Grafting *)
-    | HeartGraft of donortype Organ.t
-    | KidneyGraft of donortype Organ.t
-    | LungGraft of donortype Organ.t
-    | LiverGraft of donortype Organ.t
-    | IntestinesGraft of donortype Organ.t
-    | PancreasGraft of donortype Organ.t
-    | BoneMarrowGraft of donortype Organ.t
-    | Grafts of organ_transplant_type list
-
-    (* Whole Organ Transplants *)
-    | HeartTransplant of donortype Organ.t
-    | PancreasTransplant of donortype Organ.t
-    | LiverTransplant of donortype Organ.t 
-    | IntestinesTransplant of donortype Organ.t
-    | SingleKidneyTransplant of donortype Organ.t
-    | DualKidneyTransplant of donortype Organ.t
-    | BilateralLungTransplant of donortype Organ.t
-    | SingleLungTransplant of donortype Organ.t
-    | HeartAndLungsTransplant of donortype Organ.t * organ_transplant_type
-    | ManyOrganTransplant of organ_transplant_type list
-
-    (* Tissue Transplant *)
-    | BoneMarrowTransplant of donortype Organ.t
-    | TissueTransplant of donortype Organ.t
-    | ManyTissueTransplants of donortype Organ.t list
-    | TissueGraft of donortype Organ.t
-    | ManyTissueGrafts of donortype Organ.t list
-
-```
+Currently, the code base combines a lot of new, novel ideas, but these will soon be refactored into an experimental (Living Donors being combined with Deceased Donors donations, etc) module inside of Policy. There is also experimental support for tissue types beyond OPTN policy reference, but out of box support will not include these. This implementation is merely a possibile reference implenetation for public OPTN algorithms for waitlist and matching. 
 
 ## Build & Run
 
