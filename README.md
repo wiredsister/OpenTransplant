@@ -12,9 +12,9 @@ Reference implementation only; not intended for use in any pilot or production s
 
 ### Authors
 
-Devops: [@yanlow](https://github.com/yanlow) 
-Algorithms & Backend: [@wiredsister](https://github.com/wiredsister)
-Product: [@MeredithStewart](https://github.com/MeredithStewart)
+- Devops: [@yanlow](https://github.com/yanlow) 
+- Algorithms & Backend: [@wiredsister](https://github.com/wiredsister)
+- Product: [@MeredithStewart](https://github.com/MeredithStewart)
 
 Special thanks to: [@ns222](https://github.com/ns222)
 
