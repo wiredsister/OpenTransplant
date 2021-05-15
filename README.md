@@ -1,5 +1,5 @@
 
-# OpenTransplant
+# OpenTransplant 
 
 ## Democratized Organ Procurement Transplant Network For The People
 
@@ -7,12 +7,14 @@
 
 Reference implementation only; not intended for use in any pilot or production scenario.
 
+[Open Source Project Kanban View](https://github.com/wiredsister/OpenTransplant/projects/1)
+
 ### Maintainer
 [@wiredsister](https://github.com/wiredsister), Government Professional Account: [@ginabeena](https://github.com/ginabeena)
 
 ### Authors
 
-- Devops: [@yanlow](https://github.com/yanlow) 
+- Devops & Backend: [@yanlow](https://github.com/yanlow) 
 - Algorithms & Backend: [@wiredsister](https://github.com/wiredsister)
 - Product: [@MeredithStewart](https://github.com/MeredithStewart)
 
@@ -22,7 +24,7 @@ Special thanks to: [@ns222](https://github.com/ns222)
 
 We believe every country and community, regardless of wealth or ability, should be able to operate an organ transplant network for its citizens. We believe this organ transplant network should be safe, auditable, free of fraud, waste, and abuse; we believe this system should benefit life and reduce death. 
 
-While this system will only ever exist as a reference implementation for United States policy, it will feature experimental algorithms to test alongside core functionality covered under public policy of the OPTN. Based upon statue the only organization in the United States that can run the Organ Network is UNOS, so this project remains hypothetical until further notice. 
+While this system will only ever exist as a reference implementation for United States policy, it will feature experimental algorithms to test alongside core functionality covered under public policy of the OPTN. Based upon statute the only organization in the United States that can run the Organ Network is UNOS, so this project remains hypothetical until further notice. 
 
 ### Key Features & Road Map:
 - organ decay is reduced
@@ -30,7 +32,7 @@ While this system will only ever exist as a reference implementation for United 
 - underserved populations and communities of color are measured against population for equity
 - the system can measure end to end actions and the implications of policy changes quickly and easily
 - the system should be near real-time with zero downtime (equivalent to a 911 system or telecom)
-- the system should not require paper or human intervention
+- the system should not require paper or human intervention for the majority of process
 - the system will be modern and incorporate medical research (HLA crossmatching, organ sizing innovations, modern logistics & tracking)
 - the system will have a modern user interface and user experience which incorporates the human perspectives of surgeons, patients, organ procurement organizations, and transplant coordinators
 - the algorithms are versioned and tested via CI/CD
@@ -43,14 +45,12 @@ While this system will only ever exist as a reference implementation for United 
 
 This entire application was designed and built using publically available information from OPTN, UNOs, and HRSA found via Google as well as numerous medical papers from scholarly journals.
 
-### Architecture Diagram
-
-![Image of Tentative Organ Transplant Architecture](https://user-images.githubusercontent.com/3818802/103159093-38953800-4793-11eb-87c7-090c816c9cc9.jpg)
+### User Journey Diagram
 
 ![Image of Idealized User Flow in Reference Prototype](https://user-images.githubusercontent.com/3818802/118364158-44786f80-b565-11eb-9b10-3f56e79d6d92.png)
 
 - Web API Layer: Elixir Phoenix Web API Stack
-- FrontEnd: Node.js, SCSS styling
+- FrontEnd: JavaScript, CSS (Note: the UI is trash and will soon be replaced. We are looking for a designer & front-end expert if anybody has cycles)
 - Backend Matching & Scheduling: OCaml services
 
 ### Tech Road Map
@@ -59,7 +59,7 @@ This entire application was designed and built using publically available inform
 2. Webapp for Organ Referral
 3. Webapp for Patient account creation
 4. Webapp for Surgeon Organ Offer
-6. EHR FHIR API integration for EPIC & Cerner
+6. EHR FHIR API integration for [EPIC](https://www.epic.com/epic/post/one-kidney-donation-five-lives-saved) Phoenix (there Organ Transplant module) & [Cerner](https://www.cerner.com/)
 7. Gherkin & Cucumber Scenario tests for each organ & user health
 
 ### Out of Box Functionality: 
