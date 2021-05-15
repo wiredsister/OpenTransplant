@@ -30,10 +30,7 @@ We believe every country and community, regardless of wealth or ability, should 
 
 This entire application was designed and built using publically available information from OPTN, UNOs, and HRSA found via Google as well as numerous medical papers from scholarly journals. See PAPERS.md (TODO: must add citations & PAPER.md file for medical lit.) for details.
 
-### Architecture Diagram
-
-![Image of Tentative Organ Transplant Architecture](https://user-images.githubusercontent.com/3818802/103159093-38953800-4793-11eb-87c7-090c816c9cc9.jpg)
-
+### Architecture
 - Web API Layer: Elixir Phoenix Web API Stack
 - FrontEnd: Node.js, SCSS styling
 - Backend Matching & Scheduling: OCaml services
