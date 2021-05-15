@@ -12,9 +12,10 @@ defmodule Otapi.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Otapi.PubSub},
       # Start the Endpoint (http/https)
-      OtapiWeb.Endpoint
+      OtapiWeb.Endpoint,
       # Start a worker by calling: Otapi.Worker.start_link(arg)
       # {Otapi.Worker, arg}
+      {Redix, host: "redis", port: 6379, name: :redix}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
