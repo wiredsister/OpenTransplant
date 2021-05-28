@@ -34,6 +34,8 @@ Special thanks to: [@ns222](https://github.com/ns222)
 
 Already have a PR ready? [Tell us about it and get us to review it!](https://github.com/wiredsister/OpenTransplant/discussions/categories/contributions-prs)
 
+[Don't for get to check out our resource page for specific contributing steps.]("./CONTRIBUTING.md")
+
 ### Feature Suggestion
 
 [Ideas Discussion](https://github.com/wiredsister/OpenTransplant/discussions/categories/ideas-for-opentransplant)
