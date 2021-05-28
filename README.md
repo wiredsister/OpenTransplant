@@ -49,6 +49,8 @@ We believe every country and community, regardless of wealth or ability, should 
 
 While this system will only ever exist as a reference implementation for United States policy, it will feature experimental algorithms to test alongside core functionality covered under public policy of the OPTN. Based upon statute the only organization in the United States that can run the Organ Network is UNOS, so this project remains hypothetical until further notice. 
 
+[To read more about the project, here is a blog post about it by the maintainer.](https://wiredsis.medium.com/opentransplant-5c9a427f972b)
+
 ### Key Features & Road Map:
 - organ decay is reduced
 - patient outcomes are optimized for
