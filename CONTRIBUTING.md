@@ -1,8 +1,8 @@
 # Reading Resources 
 
-[OPTN POLICIES](https://optn.transplant.hrsa.gov/governance/policies)
-[UNDERSTANDING THE PROJECT](https://wiredsis.medium.com/opentransplant-5c9a427f972b)
-[DATA ANALYSIS](https://www.srtr.org/)
+- [OPTN POLICIES](https://optn.transplant.hrsa.gov/governance/policies)
+- [UNDERSTANDING THE PROJECT](https://wiredsis.medium.com/opentransplant-5c9a427f972b)
+- [DATA ANALYSIS](https://www.srtr.org/)
 
 # How To Get Started
 
