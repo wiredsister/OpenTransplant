@@ -20,6 +20,27 @@ Reference implementation only; not intended for use in any pilot or production s
 
 Special thanks to: [@ns222](https://github.com/ns222)
 
+### Bug Reporting
+
+[Start a discussion with us about it so we can track it and create an issue for it!](https://github.com/wiredsister/OpenTransplant/discussions/categories/bug-reporting)
+
+### Questions & Answers
+
+[Q&A Discussion](https://github.com/wiredsister/OpenTransplant/discussions/categories/q-a)
+
+### Contributing
+
+[Introduce yourself and let us know what you want to work on!](https://github.com/wiredsister/OpenTransplant/discussions/categories/meet-greet-newbies-who-want-to-contribute)
+
+Already have a PR ready? [Tell us about it and get us to review it!](https://github.com/wiredsister/OpenTransplant/discussions/categories/contributions-prs)
+
+### Feature Suggestion
+
+[Ideas Discussion](https://github.com/wiredsister/OpenTransplant/discussions/categories/ideas-for-opentransplant)
+
+Note:
+Check the open [issues](https://github.com/wiredsister/OpenTransplant/issues) before you request because your feature may already be in the backlog.
+
 ### Project Ethos
 
 We believe every country and community, regardless of wealth or ability, should be able to operate an organ transplant network for its citizens. We believe this organ transplant network should be safe, auditable, free of fraud, waste, and abuse; we believe this system should benefit life and reduce death. 
